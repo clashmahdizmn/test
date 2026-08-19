@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-1win Bot - Casino & Betting Bot
+1 WIN Bot - Casino & Betting Bot
 """
 
 import os
@@ -24,25 +24,25 @@ from telegram.ext import (
 TOKEN = os.environ.get("BOT_TOKEN", "YOUR_BOT_TOKEN_HERE")
 ADMIN_IDS = [int(id.strip()) for id in os.environ.get("ADMIN_IDS", "123456789").split(",") if id.strip()]
 CHANNEL = os.environ.get("CHANNEL", "@onewin")
-SUPPORT = "@onewin_sup"
+SUPPORT = "@onewinsup"
 TRX_WALLET = os.environ.get("TRX_WALLET", "TEv9t55am7zcCi2Z7dUXtFfKQmofeN7e1r")
 USDT_WALLET = os.environ.get("USDT_WALLET", "TEVuvWZ68UbDUdzpd6EqxncsqDVjwyY7cj")
 
 MIN_BET = 10
 GIFT_AMOUNT = 100
 MIN_WITHDRAW = 250
-MIN_DEPOSIT = 1000  # تغییر به ۱۰۰۰ روبل
+MIN_DEPOSIT = 1000
 COMMISSION_PERCENT = 30
 INITIAL_BALANCE = 0
 
-BOT_NAME = "one win"
+BOT_NAME = "1 WIN"
 
 # ======================== WEB SERVER ========================
 flask_app = Flask(__name__)
 
 @flask_app.route("/")
 def home():
-    return jsonify({"status": "running", "bot": "onewin"})
+    return jsonify({"status": "running", "bot": "1win"})
 
 @flask_app.route("/health")
 def health():
@@ -158,15 +158,19 @@ async def main_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
         [InlineKeyboardButton("❓ Как доверять?", callback_data="trust")]
     ]
     
-    text = f"🎰 **one win**\n\n" \
-           f"👤 Пользователь: @{user['username'] or 'Пользователь'}\n" \
-           f"💰 Баланс: {format_russian_number(user['balance'])} RUB\n\n" \
-           f"✅ Вывод в рублях\n" \
-           f"👥 За каждого приглашённого — {GIFT_AMOUNT} RUB бонус\n\n" \
-           f"🆘 Поддержка: {SUPPORT}\n\n" \
-           f"Выберите действие из меню:"
+    text = f"""<b>🎰 1 WIN</b>
+
+👤 Пользователь: @{user['username'] or 'Пользователь'}
+💰 Баланс: {format_russian_number(user['balance'])} RUB
+
+✅ Вывод в рублях
+👥 За каждого приглашённого — {GIFT_AMOUNT} RUB бонус
+
+🆘 Поддержка: {SUPPORT}
+
+Выберите действие из меню:"""
     
-    await query.edit_message_text(text, reply_markup=InlineKeyboardMarkup(keyboard))
+    await query.edit_message_text(text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode="HTML")
 
 # ======================== START ========================
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -195,16 +199,18 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
             [InlineKeyboardButton("🎁 Получить бонус", callback_data="gift")],
             [InlineKeyboardButton("❓ Как доверять?", callback_data="trust")]
         ]
-        await update.message.reply_text(
-            f"🎰 **one win**\n\n"
-            f"👤 Пользователь: @{username or 'Пользователь'}\n"
-            f"💰 Баланс: {format_russian_number(user['balance'])} RUB\n\n"
-            f"✅ Вывод в рублях\n"
-            f"👥 За каждого приглашённого — {admin_config.get('gift_amount', GIFT_AMOUNT)} RUB бонус\n\n"
-            f"🆘 Поддержка: {SUPPORT}\n\n"
-            f"Выберите действие из меню:",
-            reply_markup=InlineKeyboardMarkup(keyboard)
-        )
+        text = f"""<b>🎰 1 WIN</b>
+
+👤 Пользователь: @{username or 'Пользователь'}
+💰 Баланс: {format_russian_number(user['balance'])} RUB
+
+✅ Вывод в рублях
+👥 За каждого приглашённого — {admin_config.get('gift_amount', GIFT_AMOUNT)} RUB бонус
+
+🆘 Поддержка: {SUPPORT}
+
+Выберите действие из меню:"""
+        await update.message.reply_text(text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode="HTML")
         return
     
     keyboard = []
@@ -217,19 +223,22 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if channel_count == 1:
         channels_text = f"1️⃣ {enabled_channels[0]['link']}"
         channel_word = "канал"
-        channel_word3 = "канал"
     else:
         channels_text = "\n".join([f"{i+1}️⃣ {c['link']}" for i, c in enumerate(enabled_channels)])
         channel_word = "каналы"
-        channel_word3 = "каналы"
     
     gift_amount = admin_config.get("gift_amount", GIFT_AMOUNT)
-    text = f"🎁 **Бонус за подписку: {gift_amount} RUB**\n\n"
-    text += f"Подпишитесь на наш {channel_word} и получите бонус!\n\n"
-    text += f"📌 **{channel_word.capitalize()} для подписки:**\n\n{channels_text}\n\n"
-    text += f"После подписки нажмите кнопку «✅ Я подписался»."
+    text = f"""<b>🎁 Бонус за подписку: {gift_amount} RUB</b>
+
+Подпишитесь на наш {channel_word} и получите бонус!
+
+<b>📌 {channel_word.capitalize()} для подписки:</b>
+
+{channels_text}
+
+После подписки нажмите кнопку «✅ Я подписался»."""
     
-    await update.message.reply_text(text, reply_markup=InlineKeyboardMarkup(keyboard))
+    await update.message.reply_text(text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode="HTML")
 
 async def check_gift(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
@@ -272,27 +281,28 @@ async def check_gift(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     try:
                         await context.bot.send_message(
                             referrer_id,
-                            f"🎉 **Новый пользователь по вашей ссылке!**\n\n"
-                            f"👤 Новый пользователь: @{user['username'] or user_id}\n"
-                            f"🎁 Бонус: {gift_amount} RUB добавлен на ваш счет.\n\n"
-                            f"📊 **Ваша статистика:**\n"
-                            f"👥 Всего приглашений: {referrer.get('referral_count', 0)}\n"
-                            f"💰 Получено бонусов: {format_russian_number(referrer.get('referral_gift', 0))} RUB",
-                            parse_mode="Markdown"
+                            f"""<b>🎉 Новый пользователь по вашей ссылке!</b>
+
+👤 Новый пользователь: @{user['username'] or user_id}
+🎁 Бонус: {gift_amount} RUB добавлен на ваш счет.
+
+<b>📊 Ваша статистика:</b>
+👥 Всего приглашений: {referrer.get('referral_count', 0)}
+💰 Получено бонусов: {format_russian_number(referrer.get('referral_gift', 0))} RUB""",
+                            parse_mode="HTML"
                         )
                     except Exception as e:
                         print(f"Error sending message to referrer: {e}")
                     break
         
-        await query.edit_message_text(
-            f"✅ **Поздравляем! Подписка подтверждена.**\n\n"
-            f"🎁 {gift_amount} RUB бонус добавлен на ваш счет.\n"
-            f"💰 Новый баланс: {format_russian_number(user['balance'])} RUB",
-            reply_markup=InlineKeyboardMarkup([
-                [InlineKeyboardButton("🎲 Играть", callback_data="game_menu")],
-                [InlineKeyboardButton("🔙 Главное меню", callback_data="main_menu")]
-            ])
-        )
+        text = f"""<b>✅ Поздравляем! Подписка подтверждена.</b>
+
+🎁 {gift_amount} RUB бонус добавлен на ваш счет.
+💰 Новый баланс: {format_russian_number(user['balance'])} RUB"""
+        await query.edit_message_text(text, reply_markup=InlineKeyboardMarkup([
+            [InlineKeyboardButton("🎲 Играть", callback_data="game_menu")],
+            [InlineKeyboardButton("🔙 Главное меню", callback_data="main_menu")]
+        ]), parse_mode="HTML")
     else:
         keyboard = []
         for i, channel in enumerate(enabled_channels, 1):
@@ -302,8 +312,7 @@ async def check_gift(update: Update, context: ContextTypes.DEFAULT_TYPE):
         keyboard.append([InlineKeyboardButton("✅ Я подписался", callback_data="check_gift")])
         
         await query.edit_message_text(
-            f"❌ Вы ещё не подписались на все каналы!\n\n"
-            f"Пожалуйста, подпишитесь на все каналы выше, затем нажмите «Я подписался».",
+            "❌ Вы ещё не подписались на все каналы!\n\nПожалуйста, подпишитесь на все каналы выше, затем нажмите «Я подписался».",
             reply_markup=InlineKeyboardMarkup(keyboard)
         )
 
@@ -326,7 +335,7 @@ async def game_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     keyboard.append([InlineKeyboardButton("🔙 Главное меню", callback_data="main_menu")])
     
-    await query.edit_message_text("🎮 **Игры one win**\n\nВыберите игру:", reply_markup=InlineKeyboardMarkup(keyboard))
+    await query.edit_message_text("<b>🎮 Игры 1 WIN</b>\n\nВыберите игру:", reply_markup=InlineKeyboardMarkup(keyboard), parse_mode="HTML")
 
 # ======================== DICE GAME ========================
 async def dice_game(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -340,16 +349,17 @@ async def dice_game(update: Update, context: ContextTypes.DEFAULT_TYPE):
          InlineKeyboardButton("20 RUB", callback_data="dice_bet_20")],
         [InlineKeyboardButton("50 RUB", callback_data="dice_bet_50"),
          InlineKeyboardButton("100 RUB", callback_data="dice_bet_100")],
-        [InlineKeyboardButton("200 RUB", callback_data="dice_bet_200")],
+        [InlineKeyboardButton("200 RUB", callback_data="dice_bet_200"),
+         InlineKeyboardButton("500 RUB", callback_data="dice_bet_500")],
         [InlineKeyboardButton("🔙 Главное меню", callback_data="main_menu")]
     ]
     
-    await query.edit_message_text(
-        f"🎲 **Игра в кости**\n\n"
-        f"💰 Ваш баланс: {format_russian_number(user['balance'])} RUB\n"
-        f"📌 Выберите сумму ставки:",
-        reply_markup=InlineKeyboardMarkup(keyboard)
-    )
+    text = f"""<b>🎲 Игра в кости</b>
+
+💰 Ваш баланс: {format_russian_number(user['balance'])} RUB
+📌 Выберите сумму ставки:"""
+    
+    await query.edit_message_text(text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode="HTML")
 
 async def dice_bet_selected(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
@@ -360,15 +370,14 @@ async def dice_bet_selected(update: Update, context: ContextTypes.DEFAULT_TYPE):
     amount = int(query.data.split("_")[2])
     
     if amount > user["balance"]:
-        await query.edit_message_text(
-            f"❌ Недостаточно средств!\n"
-            f"💰 Ваш баланс: {format_russian_number(user['balance'])} RUB\n"
-            f"🎯 Сумма ставки: {amount} RUB",
-            reply_markup=InlineKeyboardMarkup([
-                [InlineKeyboardButton("🔙 Выбрать сумму", callback_data="dice_game")],
-                [InlineKeyboardButton("🔙 Главное меню", callback_data="main_menu")]
-            ])
-        )
+        text = f"""❌ Недостаточно средств!
+
+💰 Ваш баланс: {format_russian_number(user['balance'])} RUB
+🎯 Сумма ставки: {amount} RUB"""
+        await query.edit_message_text(text, reply_markup=InlineKeyboardMarkup([
+            [InlineKeyboardButton("🔙 Выбрать сумму", callback_data="dice_game")],
+            [InlineKeyboardButton("🔙 Главное меню", callback_data="main_menu")]
+        ]), parse_mode="HTML")
         return
     
     context.user_data["dice_amount"] = amount
@@ -381,16 +390,18 @@ async def dice_bet_selected(update: Update, context: ContextTypes.DEFAULT_TYPE):
         [InlineKeyboardButton("🔙 Отмена", callback_data="main_menu")]
     ]
     
-    await query.edit_message_text(
-        f"🎲 **Выбор коэффициента**\n\n"
-        f"💰 Сумма ставки: {amount} RUB\n\n"
-        f"📌 Выберите один из коэффициентов:\n\n"
-        f"• **Чётное** — сумма 2 костей чётная (коэф. 2)\n"
-        f"• **Нечётное** — сумма 2 костей нечётная (коэф. 2)\n"
-        f"• **Сумма 10 или больше** — сумма 2 костей ≥ 10 (коэф. 3)\n"
-        f"• **Обе кости одинаковые** — выпало одинаковое число (коэф. 5)",
-        reply_markup=InlineKeyboardMarkup(keyboard)
-    )
+    text = f"""<b>🎲 Выбор коэффициента</b>
+
+💰 Сумма ставки: {amount} RUB
+
+<b>📌 Выберите один из коэффициентов:</b>
+
+• Чётное — сумма 2 костей чётная (коэф. 2)
+• Нечётное — сумма 2 костей нечётная (коэф. 2)
+• Сумма 10 или больше — сумма 2 костей ≥ 10 (коэф. 3)
+• Обе кости одинаковые — выпало одинаковое число (коэф. 5)"""
+    
+    await query.edit_message_text(text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode="HTML")
 
 async def dice_coef_selected(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
@@ -400,27 +411,25 @@ async def dice_coef_selected(update: Update, context: ContextTypes.DEFAULT_TYPE)
     
     bet_amount = context.user_data.get("dice_amount", 0)
     if bet_amount == 0:
-        await query.edit_message_text(
-            "❌ Ошибка! Пожалуйста, начните заново.",
-            reply_markup=InlineKeyboardMarkup([
-                [InlineKeyboardButton("🔙 Игра в кости", callback_data="dice_game")],
-                [InlineKeyboardButton("🔙 Главное меню", callback_data="main_menu")]
-            ])
-        )
+        await query.edit_message_text("❌ Ошибка! Пожалуйста, начните заново.", reply_markup=InlineKeyboardMarkup([
+            [InlineKeyboardButton("🔙 Игра в кости", callback_data="dice_game")],
+            [InlineKeyboardButton("🔙 Главное меню", callback_data="main_menu")]
+        ]))
         return
     
     choice = query.data.split("_")[2]
     context.user_data["dice_choice"] = choice
     
-    await query.edit_message_text(
-        f"🎲 **Бросок костей...**\n\n"
-        f"💰 Сумма ставки: {bet_amount} RUB\n"
-        f"🎯 Ваш выбор: {choice}\n\n"
-        f"⏳ Пожалуйста, подождите...",
-        reply_markup=InlineKeyboardMarkup([
-            [InlineKeyboardButton("🎲 Бросить кости", callback_data="dice_roll")]
-        ])
-    )
+    text = f"""<b>🎲 Бросок костей...</b>
+
+💰 Сумма ставки: {bet_amount} RUB
+🎯 Ваш выбор: {choice}
+
+⏳ Пожалуйста, подождите..."""
+    
+    await query.edit_message_text(text, reply_markup=InlineKeyboardMarkup([
+        [InlineKeyboardButton("🎲 Бросить кости", callback_data="dice_roll")]
+    ]), parse_mode="HTML")
 
 async def dice_roll(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
@@ -432,16 +441,13 @@ async def dice_roll(update: Update, context: ContextTypes.DEFAULT_TYPE):
     choice = context.user_data.get("dice_choice", "")
     
     if bet_amount == 0 or choice == "":
-        await query.edit_message_text(
-            "❌ Ошибка! Пожалуйста, начните заново.",
-            reply_markup=InlineKeyboardMarkup([
-                [InlineKeyboardButton("🔙 Игра в кости", callback_data="dice_game")],
-                [InlineKeyboardButton("🔙 Главное меню", callback_data="main_menu")]
-            ])
-        )
+        await query.edit_message_text("❌ Ошибка! Пожалуйста, начните заново.", reply_markup=InlineKeyboardMarkup([
+            [InlineKeyboardButton("🔙 Игра в кости", callback_data="dice_game")],
+            [InlineKeyboardButton("🔙 Главное меню", callback_data="main_menu")]
+        ]))
         return
     
-    await query.edit_message_text("🎲 **Бросок костей...**")
+    await query.edit_message_text("🎲 Бросок костей...")
     
     dice1 = await query.message.reply_dice(emoji="🎲")
     dice2 = await query.message.reply_dice(emoji="🎲")
@@ -487,28 +493,32 @@ async def dice_roll(update: Update, context: ContextTypes.DEFAULT_TYPE):
         user["balance"] += win_amount
         user["total_wins"] = user.get("total_wins", 0) + 1
         
-        result_text = f"🎉 **Поздравляем! Вы выиграли!**\n\n"
-        result_text += f"🎲 **Результат броска костей:**\n"
-        result_text += f"Кость 1: {value1} | Кость 2: {value2}\n"
-        result_text += f"📊 Сумма: {total}\n"
-        result_text += f"🎯 Ваш выбор: {choice_name}\n"
-        result_text += f"✅ Результат: {win_description}\n"
-        result_text += f"📊 Коэффициент: {coefficient}×\n"
-        result_text += f"💰 Ставка: {bet_amount} RUB\n"
-        result_text += f"🏆 Выигрыш: {win_amount} RUB\n\n"
-        result_text += f"💳 Новый баланс: {format_russian_number(user['balance'])} RUB"
+        result_text = f"""<b>🎉 Поздравляем! Вы выиграли!</b>
+
+<b>🎲 Результат броска костей:</b>
+Кость 1: {value1} | Кость 2: {value2}
+📊 Сумма: {total}
+🎯 Ваш выбор: {choice_name}
+✅ Результат: {win_description}
+📊 Коэффициент: {coefficient}×
+💰 Ставка: {bet_amount} RUB
+🏆 Выигрыш: {win_amount} RUB
+
+💳 Новый баланс: {format_russian_number(user['balance'])} RUB"""
         add_transaction(user_id, win_amount, "win", f"Выигрыш в кости - {choice_name}")
     else:
         user["balance"] -= bet_amount
         user["total_losses"] = user.get("total_losses", 0) + 1
         
-        result_text = f"😔 **К сожалению... Вы проиграли.**\n\n"
-        result_text += f"🎲 **Результат броска костей:**\n"
-        result_text += f"Кость 1: {value1} | Кость 2: {value2}\n"
-        result_text += f"📊 Сумма: {total}\n"
-        result_text += f"🎯 Ваш выбор: {choice_name}\n"
-        result_text += f"💰 Ставка: {bet_amount} RUB\n\n"
-        result_text += f"💳 Новый баланс: {format_russian_number(user['balance'])} RUB"
+        result_text = f"""<b>😔 К сожалению... Вы проиграли.</b>
+
+<b>🎲 Результат броска костей:</b>
+Кость 1: {value1} | Кость 2: {value2}
+📊 Сумма: {total}
+🎯 Ваш выбор: {choice_name}
+💰 Ставка: {bet_amount} RUB
+
+💳 Новый баланс: {format_russian_number(user['balance'])} RUB"""
         add_transaction(user_id, -bet_amount, "bet", f"Проигрыш в кости - {choice_name}")
     
     user["total_bets"] = user.get("total_bets", 0) + 1
@@ -521,7 +531,7 @@ async def dice_roll(update: Update, context: ContextTypes.DEFAULT_TYPE):
         [InlineKeyboardButton("🎲 Ещё раз", callback_data="dice_game")],
         [InlineKeyboardButton("🔙 Главное меню", callback_data="main_menu")]
     ]
-    await query.message.reply_text(result_text, reply_markup=InlineKeyboardMarkup(keyboard))
+    await query.message.reply_text(result_text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode="HTML")
 
 # ======================== COIN GAME ========================
 async def coin_game(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -535,17 +545,19 @@ async def coin_game(update: Update, context: ContextTypes.DEFAULT_TYPE):
          InlineKeyboardButton("20 RUB", callback_data="coin_bet_20")],
         [InlineKeyboardButton("50 RUB", callback_data="coin_bet_50"),
          InlineKeyboardButton("100 RUB", callback_data="coin_bet_100")],
-        [InlineKeyboardButton("200 RUB", callback_data="coin_bet_200")],
+        [InlineKeyboardButton("200 RUB", callback_data="coin_bet_200"),
+         InlineKeyboardButton("500 RUB", callback_data="coin_bet_500")],
         [InlineKeyboardButton("🔙 Главное меню", callback_data="main_menu")]
     ]
     
-    await query.edit_message_text(
-        f"🪙 **Орёл или решка**\n\n"
-        f"💰 Ваш баланс: {format_russian_number(user['balance'])} RUB\n"
-        f"📊 Коэффициент: **2.5**\n\n"
-        f"📌 Выберите сумму ставки:",
-        reply_markup=InlineKeyboardMarkup(keyboard)
-    )
+    text = f"""<b>🪙 Орёл или решка</b>
+
+💰 Ваш баланс: {format_russian_number(user['balance'])} RUB
+📊 Коэффициент: <b>2.5</b>
+
+📌 Выберите сумму ставки:"""
+    
+    await query.edit_message_text(text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode="HTML")
 
 async def coin_bet_selected(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
@@ -556,15 +568,14 @@ async def coin_bet_selected(update: Update, context: ContextTypes.DEFAULT_TYPE):
     amount = int(query.data.split("_")[2])
     
     if amount > user["balance"]:
-        await query.edit_message_text(
-            f"❌ Недостаточно средств!\n"
-            f"💰 Ваш баланс: {format_russian_number(user['balance'])} RUB\n"
-            f"🎯 Сумма ставки: {amount} RUB",
-            reply_markup=InlineKeyboardMarkup([
-                [InlineKeyboardButton("🔙 Выбрать сумму", callback_data="coin_game")],
-                [InlineKeyboardButton("🔙 Главное меню", callback_data="main_menu")]
-            ])
-        )
+        text = f"""❌ Недостаточно средств!
+
+💰 Ваш баланс: {format_russian_number(user['balance'])} RUB
+🎯 Сумма ставки: {amount} RUB"""
+        await query.edit_message_text(text, reply_markup=InlineKeyboardMarkup([
+            [InlineKeyboardButton("🔙 Выбрать сумму", callback_data="coin_game")],
+            [InlineKeyboardButton("🔙 Главное меню", callback_data="main_menu")]
+        ]), parse_mode="HTML")
         return
     
     context.user_data["coin_amount"] = amount
@@ -574,14 +585,17 @@ async def coin_bet_selected(update: Update, context: ContextTypes.DEFAULT_TYPE):
         [InlineKeyboardButton("📍 Решка", callback_data="coin_predict_tails")],
         [InlineKeyboardButton("🔙 Отмена", callback_data="main_menu")]
     ]
-    await query.edit_message_text(
-        f"🪙 **Орёл или решка**\n\n"
-        f"💰 Сумма ставки: {amount} RUB\n"
-        f"📊 Коэффициент: **2.5**\n\n"
-        f"📌 Чётное = Орёл 🦅 | Нечётное = Решка 📍\n\n"
-        f"Сделайте выбор:",
-        reply_markup=InlineKeyboardMarkup(keyboard)
-    )
+    
+    text = f"""<b>🪙 Орёл или решка</b>
+
+💰 Сумма ставки: {amount} RUB
+📊 Коэффициент: <b>2.5</b>
+
+📌 Чётное = Орёл 🦅 | Нечётное = Решка 📍
+
+Сделайте выбор:"""
+    
+    await query.edit_message_text(text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode="HTML")
 
 async def coin_predict(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
@@ -591,18 +605,15 @@ async def coin_predict(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     bet_amount = context.user_data.get("coin_amount", 0)
     if bet_amount == 0:
-        await query.edit_message_text(
-            "❌ Ошибка! Пожалуйста, начните заново.",
-            reply_markup=InlineKeyboardMarkup([
-                [InlineKeyboardButton("🔙 Орёл или решка", callback_data="coin_game")],
-                [InlineKeyboardButton("🔙 Главное меню", callback_data="main_menu")]
-            ])
-        )
+        await query.edit_message_text("❌ Ошибка! Пожалуйста, начните заново.", reply_markup=InlineKeyboardMarkup([
+            [InlineKeyboardButton("🔙 Орёл или решка", callback_data="coin_game")],
+            [InlineKeyboardButton("🔙 Главное меню", callback_data="main_menu")]
+        ]))
         return
     
     choice = query.data.split("_")[2]
     
-    await query.edit_message_text("🪙 **Бросок монеты...**")
+    await query.edit_message_text("🪙 Бросок монеты...")
     dice_message = await query.message.reply_dice(emoji="🎲")
     dice_value = dice_message.dice.value
     
@@ -614,22 +625,26 @@ async def coin_predict(update: Update, context: ContextTypes.DEFAULT_TYPE):
         win_amount = int(bet_amount * 2.5)
         user["balance"] += win_amount
         user["total_wins"] = user.get("total_wins", 0) + 1
-        result_text = f"🎉 **Поздравляем! Вы выиграли!**\n\n"
-        result_text += f"🪙 Результат: {result_name}\n"
-        result_text += f"🎲 Число кубика: {dice_value} ({'Чётное' if is_heads else 'Нечётное'})\n"
-        result_text += f"💰 Ставка: {bet_amount} RUB\n"
-        result_text += f"📊 Коэффициент: 2.5×\n"
-        result_text += f"🏆 Выигрыш: {win_amount} RUB\n\n"
-        result_text += f"💳 Новый баланс: {format_russian_number(user['balance'])} RUB"
+        result_text = f"""<b>🎉 Поздравляем! Вы выиграли!</b>
+
+🪙 Результат: {result_name}
+🎲 Число кубика: {dice_value} ({'Чётное' if is_heads else 'Нечётное'})
+💰 Ставка: {bet_amount} RUB
+📊 Коэффициент: 2.5×
+🏆 Выигрыш: {win_amount} RUB
+
+💳 Новый баланс: {format_russian_number(user['balance'])} RUB"""
         add_transaction(user_id, win_amount, "win", "Выигрыш в орёл или решка")
     else:
         user["balance"] -= bet_amount
         user["total_losses"] = user.get("total_losses", 0) + 1
-        result_text = f"😔 **К сожалению... Вы проиграли.**\n\n"
-        result_text += f"🪙 Результат: {result_name}\n"
-        result_text += f"🎲 Число кубика: {dice_value} ({'Чётное' if is_heads else 'Нечётное'})\n"
-        result_text += f"💰 Ставка: {bet_amount} RUB\n\n"
-        result_text += f"💳 Новый баланс: {format_russian_number(user['balance'])} RUB"
+        result_text = f"""<b>😔 К сожалению... Вы проиграли.</b>
+
+🪙 Результат: {result_name}
+🎲 Число кубика: {dice_value} ({'Чётное' if is_heads else 'Нечётное'})
+💰 Ставка: {bet_amount} RUB
+
+💳 Новый баланс: {format_russian_number(user['balance'])} RUB"""
         add_transaction(user_id, -bet_amount, "bet", "Проигрыш в орёл или решка")
     
     user["total_bets"] = user.get("total_bets", 0) + 1
@@ -641,7 +656,7 @@ async def coin_predict(update: Update, context: ContextTypes.DEFAULT_TYPE):
         [InlineKeyboardButton("🪙 Ещё раз", callback_data="coin_game")],
         [InlineKeyboardButton("🔙 Главное меню", callback_data="main_menu")]
     ]
-    await query.message.reply_text(result_text, reply_markup=InlineKeyboardMarkup(keyboard))
+    await query.message.reply_text(result_text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode="HTML")
 
 # ======================== SLOT GAME ========================
 async def slot_game(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -655,22 +670,24 @@ async def slot_game(update: Update, context: ContextTypes.DEFAULT_TYPE):
          InlineKeyboardButton("20 RUB", callback_data="slot_bet_20")],
         [InlineKeyboardButton("50 RUB", callback_data="slot_bet_50"),
          InlineKeyboardButton("100 RUB", callback_data="slot_bet_100")],
-        [InlineKeyboardButton("200 RUB", callback_data="slot_bet_200")],
+        [InlineKeyboardButton("200 RUB", callback_data="slot_bet_200"),
+         InlineKeyboardButton("500 RUB", callback_data="slot_bet_500")],
         [InlineKeyboardButton("🔙 Главное меню", callback_data="main_menu")]
     ]
     
     slot_coeffs = admin_config.get("slot_coeffs", {})
-    await query.edit_message_text(
-        f"🎰 **Слоты**\n\n"
-        f"💰 Ваш баланс: {format_russian_number(user['balance'])} RUB\n"
-        f"📊 **Коэффициенты:**\n"
-        f"💎💎💎 = {slot_coeffs.get('💎💎💎', 100)}× | ⭐⭐⭐ = {slot_coeffs.get('⭐⭐⭐', 50)}×\n"
-        f"777 = {slot_coeffs.get('777', 20)}× | 🍇🍇🍇 = {slot_coeffs.get('🍇🍇🍇', 15)}×\n"
-        f"🍋🍋🍋 = {slot_coeffs.get('🍋🍋🍋', 10)}× | 🍒🍒🍒 = {slot_coeffs.get('🍒🍒🍒', 5)}×\n"
-        f"2 одинаковых = {slot_coeffs.get('two_same', 2)}×\n\n"
-        f"📌 Выберите сумму ставки:",
-        reply_markup=InlineKeyboardMarkup(keyboard)
-    )
+    text = f"""<b>🎰 Слоты</b>
+
+💰 Ваш баланс: {format_russian_number(user['balance'])} RUB
+<b>📊 Коэффициенты:</b>
+💎💎💎 = {slot_coeffs.get('💎💎💎', 100)}× | ⭐⭐⭐ = {slot_coeffs.get('⭐⭐⭐', 50)}×
+777 = {slot_coeffs.get('777', 20)}× | 🍇🍇🍇 = {slot_coeffs.get('🍇🍇🍇', 15)}×
+🍋🍋🍋 = {slot_coeffs.get('🍋🍋🍋', 10)}× | 🍒🍒🍒 = {slot_coeffs.get('🍒🍒🍒', 5)}×
+2 одинаковых = {slot_coeffs.get('two_same', 2)}×
+
+📌 Выберите сумму ставки:"""
+    
+    await query.edit_message_text(text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode="HTML")
 
 async def slot_bet_selected(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
@@ -681,28 +698,28 @@ async def slot_bet_selected(update: Update, context: ContextTypes.DEFAULT_TYPE):
     amount = int(query.data.split("_")[2])
     
     if amount > user["balance"]:
-        await query.edit_message_text(
-            f"❌ Недостаточно средств!\n"
-            f"💰 Ваш баланс: {format_russian_number(user['balance'])} RUB\n"
-            f"🎯 Сумма ставки: {amount} RUB",
-            reply_markup=InlineKeyboardMarkup([
-                [InlineKeyboardButton("🔙 Выбрать сумму", callback_data="slot_game")],
-                [InlineKeyboardButton("🔙 Главное меню", callback_data="main_menu")]
-            ])
-        )
+        text = f"""❌ Недостаточно средств!
+
+💰 Ваш баланс: {format_russian_number(user['balance'])} RUB
+🎯 Сумма ставки: {amount} RUB"""
+        await query.edit_message_text(text, reply_markup=InlineKeyboardMarkup([
+            [InlineKeyboardButton("🔙 Выбрать сумму", callback_data="slot_game")],
+            [InlineKeyboardButton("🔙 Главное меню", callback_data="main_menu")]
+        ]), parse_mode="HTML")
         return
     
     context.user_data["slot_amount"] = amount
     
-    await query.edit_message_text(
-        f"🎰 **Слоты**\n\n"
-        f"💰 Сумма ставки: {amount} RUB\n\n"
-        f"Нажмите кнопку чтобы запустить слоты:",
-        reply_markup=InlineKeyboardMarkup([
-            [InlineKeyboardButton("🎰 Запустить слоты", callback_data="slot_spin")],
-            [InlineKeyboardButton("🔙 Отмена", callback_data="main_menu")]
-        ])
-    )
+    text = f"""<b>🎰 Слоты</b>
+
+💰 Сумма ставки: {amount} RUB
+
+Нажмите кнопку чтобы запустить слоты:"""
+    
+    await query.edit_message_text(text, reply_markup=InlineKeyboardMarkup([
+        [InlineKeyboardButton("🎰 Запустить слоты", callback_data="slot_spin")],
+        [InlineKeyboardButton("🔙 Отмена", callback_data="main_menu")]
+    ]), parse_mode="HTML")
 
 async def slot_spin(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
@@ -712,16 +729,13 @@ async def slot_spin(update: Update, context: ContextTypes.DEFAULT_TYPE):
     bet_amount = context.user_data.get("slot_amount", 0)
     
     if bet_amount == 0:
-        await query.edit_message_text(
-            "❌ Ошибка! Пожалуйста, начните заново.",
-            reply_markup=InlineKeyboardMarkup([
-                [InlineKeyboardButton("🔙 Слоты", callback_data="slot_game")],
-                [InlineKeyboardButton("🔙 Главное меню", callback_data="main_menu")]
-            ])
-        )
+        await query.edit_message_text("❌ Ошибка! Пожалуйста, начните заново.", reply_markup=InlineKeyboardMarkup([
+            [InlineKeyboardButton("🔙 Слоты", callback_data="slot_game")],
+            [InlineKeyboardButton("🔙 Главное меню", callback_data="main_menu")]
+        ]))
         return
     
-    await query.edit_message_text("🎰 **Запуск слотов...**")
+    await query.edit_message_text("🎰 Запуск слотов...")
     dice_message = await query.message.reply_dice(emoji="🎰")
     dice_value = dice_message.dice.value
     
@@ -742,23 +756,31 @@ async def slot_spin(update: Update, context: ContextTypes.DEFAULT_TYPE):
         win_amount = bet_amount * coefficient
         user["balance"] += win_amount
         user["total_wins"] = user.get("total_wins", 0) + 1
-        result_text = f"🎉 **Поздравляем! Вы выиграли!**\n\n"
-        result_text += f"🎰 Результат слотов:\n[ {result[0]} ] [ {result[1]} ] [ {result[2]} ]\n\n"
-        result_text += f"📊 Комбинация: {combo}\n"
-        result_text += f"🎯 Коэффициент: {coefficient}×\n"
-        result_text += f"💰 Ставка: {bet_amount} RUB\n"
-        result_text += f"🏆 Выигрыш: {win_amount} RUB\n\n"
-        result_text += f"💳 Новый баланс: {format_russian_number(user['balance'])} RUB"
+        result_text = f"""<b>🎉 Поздравляем! Вы выиграли!</b>
+
+🎰 Результат слотов:
+[ {result[0]} ] [ {result[1]} ] [ {result[2]} ]
+
+📊 Комбинация: {combo}
+🎯 Коэффициент: {coefficient}×
+💰 Ставка: {bet_amount} RUB
+🏆 Выигрыш: {win_amount} RUB
+
+💳 Новый баланс: {format_russian_number(user['balance'])} RUB"""
         add_transaction(user_id, win_amount, "win", f"Выигрыш в слотах - {combo}")
     else:
         user["balance"] -= bet_amount
         user["total_losses"] = user.get("total_losses", 0) + 1
-        result_text = f"😔 **К сожалению... Вы проиграли.**\n\n"
-        result_text += f"🎰 Результат слотов:\n[ {result[0]} ] [ {result[1]} ] [ {result[2]} ]\n\n"
-        result_text += f"📊 Комбинация: {combo}\n"
-        result_text += f"🎯 Коэффициент: 0×\n"
-        result_text += f"💰 Ставка: {bet_amount} RUB\n\n"
-        result_text += f"💳 Новый баланс: {format_russian_number(user['balance'])} RUB"
+        result_text = f"""<b>😔 К сожалению... Вы проиграли.</b>
+
+🎰 Результат слотов:
+[ {result[0]} ] [ {result[1]} ] [ {result[2]} ]
+
+📊 Комбинация: {combo}
+🎯 Коэффициент: 0×
+💰 Ставка: {bet_amount} RUB
+
+💳 Новый баланс: {format_russian_number(user['balance'])} RUB"""
         add_transaction(user_id, -bet_amount, "bet", "Проигрыш в слотах")
     
     user["total_bets"] = user.get("total_bets", 0) + 1
@@ -770,7 +792,7 @@ async def slot_spin(update: Update, context: ContextTypes.DEFAULT_TYPE):
         [InlineKeyboardButton("🎰 Ещё раз", callback_data="slot_game")],
         [InlineKeyboardButton("🔙 Главное меню", callback_data="main_menu")]
     ]
-    await query.message.reply_text(result_text, reply_markup=InlineKeyboardMarkup(keyboard))
+    await query.message.reply_text(result_text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode="HTML")
 
 # ======================== FOOTBALL GAME ========================
 async def football_game(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -784,17 +806,19 @@ async def football_game(update: Update, context: ContextTypes.DEFAULT_TYPE):
          InlineKeyboardButton("20 RUB", callback_data="football_bet_20")],
         [InlineKeyboardButton("50 RUB", callback_data="football_bet_50"),
          InlineKeyboardButton("100 RUB", callback_data="football_bet_100")],
-        [InlineKeyboardButton("200 RUB", callback_data="football_bet_200")],
+        [InlineKeyboardButton("200 RUB", callback_data="football_bet_200"),
+         InlineKeyboardButton("500 RUB", callback_data="football_bet_500")],
         [InlineKeyboardButton("🔙 Главное меню", callback_data="main_menu")]
     ]
     
-    await query.edit_message_text(
-        f"⚽ **Футбол**\n\n"
-        f"💰 Ваш баланс: {format_russian_number(user['balance'])} RUB\n"
-        f"📊 Коэффициент: **2.5**\n\n"
-        f"📌 Выберите сумму ставки:",
-        reply_markup=InlineKeyboardMarkup(keyboard)
-    )
+    text = f"""<b>⚽ Футбол</b>
+
+💰 Ваш баланс: {format_russian_number(user['balance'])} RUB
+📊 Коэффициент: <b>2.5</b>
+
+📌 Выберите сумму ставки:"""
+    
+    await query.edit_message_text(text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode="HTML")
 
 async def football_bet_selected(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
@@ -805,15 +829,14 @@ async def football_bet_selected(update: Update, context: ContextTypes.DEFAULT_TY
     amount = int(query.data.split("_")[2])
     
     if amount > user["balance"]:
-        await query.edit_message_text(
-            f"❌ Недостаточно средств!\n"
-            f"💰 Ваш баланс: {format_russian_number(user['balance'])} RUB\n"
-            f"🎯 Сумма ставки: {amount} RUB",
-            reply_markup=InlineKeyboardMarkup([
-                [InlineKeyboardButton("🔙 Выбрать сумму", callback_data="football_game")],
-                [InlineKeyboardButton("🔙 Главное меню", callback_data="main_menu")]
-            ])
-        )
+        text = f"""❌ Недостаточно средств!
+
+💰 Ваш баланс: {format_russian_number(user['balance'])} RUB
+🎯 Сумма ставки: {amount} RUB"""
+        await query.edit_message_text(text, reply_markup=InlineKeyboardMarkup([
+            [InlineKeyboardButton("🔙 Выбрать сумму", callback_data="football_game")],
+            [InlineKeyboardButton("🔙 Главное меню", callback_data="main_menu")]
+        ]), parse_mode="HTML")
         return
     
     context.user_data["football_amount"] = amount
@@ -823,13 +846,15 @@ async def football_bet_selected(update: Update, context: ContextTypes.DEFAULT_TY
         [InlineKeyboardButton("❌ Гола не будет (коэф. 2.5)", callback_data="football_predict_miss")],
         [InlineKeyboardButton("🔙 Отмена", callback_data="main_menu")]
     ]
-    await query.edit_message_text(
-        f"⚽ **Прогноз на футбол**\n\n"
-        f"💰 Сумма ставки: {amount} RUB\n"
-        f"📊 Коэффициент: **2.5**\n\n"
-        f"Мяч летит к воротам!",
-        reply_markup=InlineKeyboardMarkup(keyboard)
-    )
+    
+    text = f"""<b>⚽ Прогноз на футбол</b>
+
+💰 Сумма ставки: {amount} RUB
+📊 Коэффициент: <b>2.5</b>
+
+Мяч летит к воротам!"""
+    
+    await query.edit_message_text(text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode="HTML")
 
 async def football_predict(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
@@ -840,16 +865,13 @@ async def football_predict(update: Update, context: ContextTypes.DEFAULT_TYPE):
     prediction = query.data.split("_")[2]
     
     if bet_amount == 0:
-        await query.edit_message_text(
-            "❌ Ошибка! Пожалуйста, начните заново.",
-            reply_markup=InlineKeyboardMarkup([
-                [InlineKeyboardButton("🔙 Футбол", callback_data="football_game")],
-                [InlineKeyboardButton("🔙 Главное меню", callback_data="main_menu")]
-            ])
-        )
+        await query.edit_message_text("❌ Ошибка! Пожалуйста, начните заново.", reply_markup=InlineKeyboardMarkup([
+            [InlineKeyboardButton("🔙 Футбол", callback_data="football_game")],
+            [InlineKeyboardButton("🔙 Главное меню", callback_data="main_menu")]
+        ]))
         return
     
-    await query.edit_message_text("⚽ **Удар...**")
+    await query.edit_message_text("⚽ Удар...")
     dice_message = await query.message.reply_dice(emoji="⚽")
     dice_value = dice_message.dice.value
     
@@ -861,22 +883,26 @@ async def football_predict(update: Update, context: ContextTypes.DEFAULT_TYPE):
         win_amount = int(bet_amount * 2.5)
         user["balance"] += win_amount
         user["total_wins"] = user.get("total_wins", 0) + 1
-        result_msg = f"🎉 **Поздравляем! Вы выиграли!**\n\n"
-        result_msg += f"⚽ Результат удара: {result_text}\n"
-        result_msg += f"🎯 Прогноз: {'Будет гол' if prediction == 'goal' else 'Гола не будет'} ✅\n"
-        result_msg += f"💰 Ставка: {bet_amount} RUB\n"
-        result_msg += f"📊 Коэффициент: 2.5×\n"
-        result_msg += f"🏆 Выигрыш: {win_amount} RUB\n\n"
-        result_msg += f"💳 Новый баланс: {format_russian_number(user['balance'])} RUB"
+        result_msg = f"""<b>🎉 Поздравляем! Вы выиграли!</b>
+
+⚽ Результат удара: {result_text}
+🎯 Прогноз: {'Будет гол' if prediction == 'goal' else 'Гола не будет'} ✅
+💰 Ставка: {bet_amount} RUB
+📊 Коэффициент: 2.5×
+🏆 Выигрыш: {win_amount} RUB
+
+💳 Новый баланс: {format_russian_number(user['balance'])} RUB"""
         add_transaction(user_id, win_amount, "win", "Выигрыш в футболе")
     else:
         user["balance"] -= bet_amount
         user["total_losses"] = user.get("total_losses", 0) + 1
-        result_msg = f"😔 **К сожалению... Вы проиграли.**\n\n"
-        result_msg += f"⚽ Результат удара: {result_text}\n"
-        result_msg += f"🎯 Прогноз: {'Будет гол' if prediction == 'goal' else 'Гола не будет'}\n"
-        result_msg += f"💰 Ставка: {bet_amount} RUB\n\n"
-        result_msg += f"💳 Новый баланс: {format_russian_number(user['balance'])} RUB"
+        result_msg = f"""<b>😔 К сожалению... Вы проиграли.</b>
+
+⚽ Результат удара: {result_text}
+🎯 Прогноз: {'Будет гол' if prediction == 'goal' else 'Гола не будет'}
+💰 Ставка: {bet_amount} RUB
+
+💳 Новый баланс: {format_russian_number(user['balance'])} RUB"""
         add_transaction(user_id, -bet_amount, "bet", "Проигрыш в футболе")
     
     user["total_bets"] = user.get("total_bets", 0) + 1
@@ -888,7 +914,7 @@ async def football_predict(update: Update, context: ContextTypes.DEFAULT_TYPE):
         [InlineKeyboardButton("⚽ Ещё раз", callback_data="football_game")],
         [InlineKeyboardButton("🔙 Главное меню", callback_data="main_menu")]
     ]
-    await query.message.reply_text(result_msg, reply_markup=InlineKeyboardMarkup(keyboard))
+    await query.message.reply_text(result_msg, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode="HTML")
 
 # ======================== MY ACCOUNT ========================
 async def my_account(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -902,12 +928,13 @@ async def my_account(update: Update, context: ContextTypes.DEFAULT_TYPE):
     losses = user.get("total_losses", 0)
     win_rate = round((wins / total_bets * 100) if total_bets > 0 else 0, 1)
     
-    text = f"👤 **Мой счёт**\n\n"
-    text += f"🆔 Номер пользователя: {user_id}\n"
-    text += f"👥 Успешных приглашений: {user.get('referral_count', 0)}\n"
-    text += f"📊 Всего ставок: {total_bets} | Побед: {wins} | Поражений: {losses}\n"
-    text += f"📈 Процент побед: {win_rate}%\n"
-    text += f"💰 Баланс: {format_russian_number(user['balance'])} RUB"
+    text = f"""<b>👤 Мой счёт</b>
+
+🆔 Номер пользователя: {user_id}
+👥 Успешных приглашений: {user.get('referral_count', 0)}
+📊 Всего ставок: {total_bets} | Побед: {wins} | Поражений: {losses}
+📈 Процент побед: {win_rate}%
+💰 Баланс: {format_russian_number(user['balance'])} RUB"""
     
     keyboard = [
         [InlineKeyboardButton("💳 Пополнить", callback_data="deposit")],
@@ -915,7 +942,7 @@ async def my_account(update: Update, context: ContextTypes.DEFAULT_TYPE):
         [InlineKeyboardButton("📜 История", callback_data="transactions")],
         [InlineKeyboardButton("🔙 Главное меню", callback_data="main_menu")]
     ]
-    await query.edit_message_text(text, reply_markup=InlineKeyboardMarkup(keyboard))
+    await query.edit_message_text(text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode="HTML")
 
 # ======================== DEPOSIT ========================
 async def deposit(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -926,46 +953,45 @@ async def deposit(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     trx_wallet = admin_config.get("trx_wallet", TRX_WALLET)
     usdt_wallet = admin_config.get("usdt_wallet", USDT_WALLET)
-    support = admin_config.get("support", SUPPORT)
     
     bonus_text = ""
     if not user.get("has_deposited", False):
-        bonus_text = f"🎁 **Бонус за первое пополнение: 50% до 2 500 RUB**\n\n"
+        bonus_text = "<b>🎁 Бонус за первое пополнение: 50% до 2 500 RUB</b>\n\n"
     
-    text = f"""💳 **Пополнение баланса**
+    text = f"""<b>💳 Пополнение баланса</b>
 
 💰 Минимальная сумма пополнения: {MIN_DEPOSIT} RUB
 
 {bonus_text}
 ━━━━━━━━━━━━━━━━━━━━━━
-📌 **Банковская карта для пополнения:**
-❌ **Временно недоступна.**
+<b>📌 Банковская карта для пополнения:</b>
+❌ Временно недоступна.
 
 ━━━━━━━━━━━━━━━━━━━━━━
-🟣 **TRX-кошелёк (TRC20):**
-`{trx_wallet}`
+<b>🟣 TRX-кошелёк (TRC20):</b>
+<code>{trx_wallet}</code>
 
-📋 **Нажмите на адрес, чтобы скопировать**
-
-━━━━━━━━━━━━━━━━━━━━━━
-🟢 **USDT-кошелёк (TRC20):**
-`{usdt_wallet}`
-
-📋 **Нажмите на адрес, чтобы скопировать**
+📋 Нажмите на адрес, чтобы скопировать
 
 ━━━━━━━━━━━━━━━━━━━━━━
-📌 **Важная информация:**
+<b>🟢 USDT-кошелёк (TRC20):</b>
+<code>{usdt_wallet}</code>
+
+📋 Нажмите на адрес, чтобы скопировать
+
+━━━━━━━━━━━━━━━━━━━━━━
+<b>📌 Важная информация:</b>
 • Минимальная сумма пополнения: {MIN_DEPOSIT} RUB
-• Используйте сеть **TRC20**
+• Используйте сеть TRC20
 • После пополнения отправьте скриншот администратору
 • Все пополнения проверяются и подтверждаются вручную
 
 ━━━━━━━━━━━━━━━━━━━━━━
-📌 **Администратор для отправки скриншота:**
+<b>📌 Администратор для отправки скриншота:</b>
 
 🆔 {SUPPORT}
 
-📋 **Нажмите на ID и отправьте скриншот**
+📋 Нажмите на ID и отправьте скриншот
 
 🆘 Поддержка: {SUPPORT}"""
     
@@ -973,11 +999,7 @@ async def deposit(update: Update, context: ContextTypes.DEFAULT_TYPE):
         [InlineKeyboardButton("🔙 Главное меню", callback_data="main_menu")]
     ]
     
-    await query.edit_message_text(
-        text,
-        reply_markup=InlineKeyboardMarkup(keyboard),
-        parse_mode="Markdown"
-    )
+    await query.edit_message_text(text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode="HTML")
 
 # ======================== WITHDRAW ========================
 async def withdraw(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -987,16 +1009,17 @@ async def withdraw(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = get_user(user_id)
     
     if not user.get("has_deposited", False):
-        await query.edit_message_text(
-            f"❌ **Вывод средств недоступен!**\n\n"
-            f"Вы ещё не пополняли баланс.\n\n"
-            f"📌 Вывод доступен только после **первого пополнения**.\n\n"
-            f"Пополните баланс через «💳 Пополнить».",
-            reply_markup=InlineKeyboardMarkup([
-                [InlineKeyboardButton("💳 Пополнить", callback_data="deposit")],
-                [InlineKeyboardButton("🔙 Главное меню", callback_data="main_menu")]
-            ])
-        )
+        text = """<b>❌ Вывод средств недоступен!</b>
+
+Вы ещё не пополняли баланс.
+
+📌 Вывод доступен только после <b>первого пополнения</b>.
+
+Пополните баланс через «💳 Пополнить»."""
+        await query.edit_message_text(text, reply_markup=InlineKeyboardMarkup([
+            [InlineKeyboardButton("💳 Пополнить", callback_data="deposit")],
+            [InlineKeyboardButton("🔙 Главное меню", callback_data="main_menu")]
+        ]), parse_mode="HTML")
         return
     
     balance = user["balance"]
@@ -1016,24 +1039,25 @@ async def withdraw(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     if not keyboard:
         keyboard.append([InlineKeyboardButton("🔙 Главное меню", callback_data="main_menu")])
-        await query.edit_message_text(
-            f"🏦 **Вывод средств**\n\n"
-            f"💰 Доступный баланс: {format_russian_number(balance)} RUB\n"
-            f"📌 Минимальная сумма вывода: {min_withdraw} RUB\n\n"
-            f"❌ Недостаточно средств для вывода!",
-            reply_markup=InlineKeyboardMarkup(keyboard)
-        )
+        text = f"""<b>🏦 Вывод средств</b>
+
+💰 Доступный баланс: {format_russian_number(balance)} RUB
+📌 Минимальная сумма вывода: {min_withdraw} RUB
+
+❌ Недостаточно средств для вывода!"""
+        await query.edit_message_text(text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode="HTML")
         return
     
     keyboard.append([InlineKeyboardButton("🔙 Главное меню", callback_data="main_menu")])
     
-    await query.edit_message_text(
-        f"🏦 **Вывод средств**\n\n"
-        f"💰 Доступный баланс: {format_russian_number(balance)} RUB\n"
-        f"📌 Минимальная сумма вывода: {min_withdraw} RUB\n\n"
-        f"📌 Выберите сумму:",
-        reply_markup=InlineKeyboardMarkup(keyboard)
-    )
+    text = f"""<b>🏦 Вывод средств</b>
+
+💰 Доступный баланс: {format_russian_number(balance)} RUB
+📌 Минимальная сумма вывода: {min_withdraw} RUB
+
+📌 Выберите сумму:"""
+    
+    await query.edit_message_text(text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode="HTML")
 
 async def withdraw_amount_selected(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
@@ -1050,20 +1074,20 @@ async def withdraw_amount_selected(update: Update, context: ContextTypes.DEFAULT
         [InlineKeyboardButton("🔙 Отмена", callback_data="main_menu")]
     ]
     
-    await query.edit_message_text(
-        f"✅ Сумма {amount} RUB зарегистрирована для вывода.\n\n"
-        f"Выберите один из способов:",
-        reply_markup=InlineKeyboardMarkup(keyboard)
-    )
+    text = f"""✅ Сумма {amount} RUB зарегистрирована для вывода.
+
+Выберите один из способов:"""
+    
+    await query.edit_message_text(text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode="HTML")
 
 async def withdraw_card(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
     context.user_data["withdraw_method"] = "card"
     await query.edit_message_text(
-        "💳 **Вывод на карту**\n\n"
-        f"Введите номер карты (16 цифр):",
-        reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Отмена", callback_data="main_menu")]])
+        "<b>💳 Вывод на карту</b>\n\nВведите номер карты (16 цифр):",
+        reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Отмена", callback_data="main_menu")]]),
+        parse_mode="HTML"
     )
 
 async def withdraw_wallet(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -1071,9 +1095,9 @@ async def withdraw_wallet(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.answer()
     context.user_data["withdraw_method"] = "wallet"
     await query.edit_message_text(
-        "🟣 **Вывод на TRX-кошелёк**\n\n"
-        f"Введите адрес TRX-кошелька:",
-        reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Отмена", callback_data="main_menu")]])
+        "<b>🟣 Вывод на TRX-кошелёк</b>\n\nВведите адрес TRX-кошелька:",
+        reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Отмена", callback_data="main_menu")]]),
+        parse_mode="HTML"
     )
 
 async def handle_withdraw_info(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -1092,21 +1116,25 @@ async def handle_withdraw_info(update: Update, context: ContextTypes.DEFAULT_TYP
         try:
             await context.bot.send_message(
                 admin_id,
-                f"🏦 **Новый запрос на вывод**\n\n"
-                f"👤 Пользователь: @{user['username'] or user_id}\n"
-                f"💰 Сумма: {amount} RUB\n"
-                f"📌 Способ: {method_name}\n"
-                f"📋 Информация: {info}"
+                f"""<b>🏦 Новый запрос на вывод</b>
+
+👤 Пользователь: @{user['username'] or user_id}
+💰 Сумма: {amount} RUB
+📌 Способ: {method_name}
+📋 Информация: {info}""",
+                parse_mode="HTML"
             )
         except:
             pass
     
     await update.message.reply_text(
-        f"✅ **Запрос на вывод зарегистрирован!**\n\n"
-        f"💰 Сумма: {amount} RUB\n"
-        f"🕒 Запрос отправлен на обработку.\n"
-        f"По вопросам обращайтесь: {SUPPORT}",
-        reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Главное меню", callback_data="main_menu")]])
+        f"""<b>✅ Запрос на вывод зарегистрирован!</b>
+
+💰 Сумма: {amount} RUB
+🕒 Запрос отправлен на обработку.
+По вопросам обращайтесь: {SUPPORT}""",
+        reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Главное меню", callback_data="main_menu")]]),
+        parse_mode="HTML"
     )
 
 # ======================== TRANSACTIONS ========================
@@ -1118,14 +1146,14 @@ async def transactions(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     trans = user.get("transactions", [])[-10:]
     if not trans:
-        text = "📜 **История транзакций**\n\nНет транзакций."
+        text = "<b>📜 История транзакций</b>\n\nНет транзакций."
     else:
-        text = "📜 **История транзакций**\n\n"
+        text = "<b>📜 История транзакций</b>\n\n"
         for t in trans[-10:]:
             emoji = "💰" if t["amount"] > 0 else "💸"
             text += f"{t['date']} | {emoji} {format_russian_number(t['amount'])} RUB | Баланс: {format_russian_number(t['balance_after'])} RUB\n"
     
-    await query.edit_message_text(text, reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Мой счёт", callback_data="my_account")]]))
+    await query.edit_message_text(text, reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Мой счёт", callback_data="my_account")]]), parse_mode="HTML")
 
 # ======================== GIFT ========================
 async def gift(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -1138,33 +1166,41 @@ async def gift(update: Update, context: ContextTypes.DEFAULT_TYPE):
     link = f"https://t.me/{bot_username}?start=ref_{user['referral_code']}"
     commission_percent = user.get("commission_percent", COMMISSION_PERCENT)
     
-    text = f"🎁 **Бонус и комиссия**\n\n"
-    text += f"📌 **Ваш процент комиссии:** {commission_percent}%\n\n"
-    text += f"👤 За каждого приглашённого — {admin_config.get('gift_amount', GIFT_AMOUNT)} RUB бонус\n"
-    text += f"💰 С каждого пополнения реферала — {commission_percent}% комиссия\n\n"
-    text += f"🔗 Ваша реферальная ссылка:\n`{link}`\n\n"
-    text += f"📋 **Нажмите на ссылку, чтобы скопировать**\n\n"
-    text += f"📊 **Ваша статистика:**\n"
-    text += f"👥 Успешных приглашений: {user.get('referral_count', 0)}\n"
-    text += f"💰 Получено бонусов: {format_russian_number(user.get('referral_gift', 0))} RUB\n"
-    text += f"💸 Получено комиссии: {format_russian_number(user.get('referral_commission', 0))} RUB"
+    text = f"""<b>🎁 Бонус и комиссия</b>
+
+<b>📌 Ваш процент комиссии:</b> {commission_percent}%
+
+👤 За каждого приглашённого — {admin_config.get('gift_amount', GIFT_AMOUNT)} RUB бонус
+💰 С каждого пополнения реферала — {commission_percent}% комиссия
+
+<b>🔗 Ваша реферальная ссылка:</b>
+<code>{link}</code>
+
+📋 Нажмите на ссылку, чтобы скопировать
+
+<b>📊 Ваша статистика:</b>
+👥 Успешных приглашений: {user.get('referral_count', 0)}
+💰 Получено бонусов: {format_russian_number(user.get('referral_gift', 0))} RUB
+💸 Получено комиссии: {format_russian_number(user.get('referral_commission', 0))} RUB"""
     
     keyboard = [
         [InlineKeyboardButton("🔙 Главное меню", callback_data="main_menu")]
     ]
-    await query.edit_message_text(text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode="Markdown")
+    await query.edit_message_text(text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode="HTML")
 
 # ======================== TRUST ========================
 async def trust(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
-    await query.edit_message_text(
-        f"❓ **Как доверять?**\n\n"
-        f"Мы понимаем, что доверие к онлайн-сервису может быть сложным.\n\n"
-        f"Чтобы вы могли начать с уверенностью, мы дарим **{admin_config.get('gift_amount', GIFT_AMOUNT)} RUB бонус** при подписке на наш канал.\n\n"
-        f"Мы стремимся предоставить приятный и честный игровой опыт для всех пользователей. ❤️",
-        reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Главное меню", callback_data="main_menu")]])
-    )
+    text = f"""<b>❓ Как доверять?</b>
+
+Мы понимаем, что доверие к онлайн-сервису может быть сложным.
+
+Чтобы вы могли начать с уверенностью, мы дарим <b>{admin_config.get('gift_amount', GIFT_AMOUNT)} RUB бонус</b> при подписке на наш канал.
+
+Мы стремимся предоставить приятный и честный игровой опыт для всех пользователей. ❤️"""
+    
+    await query.edit_message_text(text, reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Главное меню", callback_data="main_menu")]]), parse_mode="HTML")
 
 # ======================== ADMIN PANEL ========================
 async def admin_panel(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -1179,7 +1215,7 @@ async def admin_panel(update: Update, context: ContextTypes.DEFAULT_TYPE):
         [InlineKeyboardButton("⚙️ Settings", callback_data="admin_settings")],
         [InlineKeyboardButton("🔙 Close", callback_data="admin_close")]
     ]
-    await update.message.reply_text("👑 **one win Admin Panel**", reply_markup=InlineKeyboardMarkup(keyboard))
+    await update.message.reply_text("<b>👑 1 WIN Admin Panel</b>", reply_markup=InlineKeyboardMarkup(keyboard), parse_mode="HTML")
 
 async def admin_stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
@@ -1187,11 +1223,12 @@ async def admin_stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
     total = len(users)
     total_balance = sum(u["balance"] for u in users.values())
     banned = sum(1 for u in users.values() if u.get("banned", False))
-    text = f"📊 **Statistics**\n\n"
-    text += f"👥 Total users: {total}\n"
-    text += f"🚫 Banned users: {banned}\n"
-    text += f"💰 Total balance: {format_russian_number(total_balance)} RUB"
-    await query.edit_message_text(text, reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Back", callback_data="admin_back")]]))
+    text = f"""<b>📊 Statistics</b>
+
+👥 Total users: {total}
+🚫 Banned users: {banned}
+💰 Total balance: {format_russian_number(total_balance)} RUB"""
+    await query.edit_message_text(text, reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Back", callback_data="admin_back")]]), parse_mode="HTML")
 
 async def admin_users(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
@@ -1204,7 +1241,7 @@ async def admin_users(update: Update, context: ContextTypes.DEFAULT_TYPE):
         [InlineKeyboardButton("🎁 Global Gift", callback_data="admin_global_gift")],
         [InlineKeyboardButton("🔙 Back", callback_data="admin_back")]
     ]
-    await query.edit_message_text("👥 **Users Management**", reply_markup=InlineKeyboardMarkup(keyboard))
+    await query.edit_message_text("<b>👥 Users Management</b>", reply_markup=InlineKeyboardMarkup(keyboard), parse_mode="HTML")
 
 async def admin_settings(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
@@ -1217,7 +1254,7 @@ async def admin_settings(update: Update, context: ContextTypes.DEFAULT_TYPE):
         [InlineKeyboardButton("🔌 Bot Status", callback_data="admin_toggle_bot")],
         [InlineKeyboardButton("🔙 Back", callback_data="admin_back")]
     ]
-    await query.edit_message_text("⚙️ **Settings**", reply_markup=InlineKeyboardMarkup(keyboard))
+    await query.edit_message_text("<b>⚙️ Settings</b>", reply_markup=InlineKeyboardMarkup(keyboard), parse_mode="HTML")
 
 async def admin_back(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
@@ -1237,111 +1274,142 @@ async def admin_toggle_bot(update: Update, context: ContextTypes.DEFAULT_TYPE):
     save_json(ADMIN_CONFIG_FILE, admin_config)
     status_text = "✅ Enabled" if admin_config["bot_enabled"] else "❌ Disabled"
     await query.edit_message_text(
-        f"🔌 **Bot status changed!**\n\n"
-        f"📌 New status: {status_text}",
+        f"""<b>🔌 Bot status changed!</b>
+
+📌 New status: {status_text}""",
         reply_markup=InlineKeyboardMarkup([
             [InlineKeyboardButton("🔄 Toggle", callback_data="admin_toggle_bot")],
             [InlineKeyboardButton("🔙 Back", callback_data="admin_back")]
-        ])
+        ]),
+        parse_mode="HTML"
     )
 
 async def admin_set_date(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
     await query.edit_message_text(
-        f"📅 **Change Deposit Date**\n\n"
-        f"📌 Current date: {admin_config.get('deposit_enable_date', '30 August')}\n\n"
-        f"Enter new date:",
-        reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Back", callback_data="admin_back")]])
+        f"""<b>📅 Change Deposit Date</b>
+
+📌 Current date: {admin_config.get('deposit_enable_date', '30 August')}
+
+Enter new date:""",
+        reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Back", callback_data="admin_back")]]),
+        parse_mode="HTML"
     )
 
 async def admin_set_wallets(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
     await query.edit_message_text(
-        f"🔄 **Change Wallets**\n\n"
-        f"🟣 Current TRX wallet:\n`{admin_config.get('trx_wallet', TRX_WALLET)}`\n\n"
-        f"🟢 Current USDT wallet:\n`{admin_config.get('usdt_wallet', USDT_WALLET)}`\n\n"
-        f"Select wallet to change:",
+        f"""<b>🔄 Change Wallets</b>
+
+🟣 Current TRX wallet:
+<code>{admin_config.get('trx_wallet', TRX_WALLET)}</code>
+
+🟢 Current USDT wallet:
+<code>{admin_config.get('usdt_wallet', USDT_WALLET)}</code>
+
+Select wallet to change:""",
         reply_markup=InlineKeyboardMarkup([
             [InlineKeyboardButton("✏️ Change TRX", callback_data="admin_edit_trx")],
             [InlineKeyboardButton("✏️ Change USDT", callback_data="admin_edit_usdt")],
             [InlineKeyboardButton("🔙 Back", callback_data="admin_back")]
-        ])
+        ]),
+        parse_mode="HTML"
     )
 
 async def admin_edit_trx(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
     await query.edit_message_text(
-        f"✏️ **Change TRX Wallet**\n\n"
-        f"📌 Current address:\n`{admin_config.get('trx_wallet', TRX_WALLET)}`\n\n"
-        f"Enter new TRX address:",
-        reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Back", callback_data="admin_back")]])
+        f"""<b>✏️ Change TRX Wallet</b>
+
+📌 Current address:
+<code>{admin_config.get('trx_wallet', TRX_WALLET)}</code>
+
+Enter new TRX address:""",
+        reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Back", callback_data="admin_back")]]),
+        parse_mode="HTML"
     )
 
 async def admin_edit_usdt(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
     await query.edit_message_text(
-        f"✏️ **Change USDT Wallet**\n\n"
-        f"📌 Current address:\n`{admin_config.get('usdt_wallet', USDT_WALLET)}`\n\n"
-        f"Enter new USDT address:",
-        reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Back", callback_data="admin_back")]])
+        f"""<b>✏️ Change USDT Wallet</b>
+
+📌 Current address:
+<code>{admin_config.get('usdt_wallet', USDT_WALLET)}</code>
+
+Enter new USDT address:""",
+        reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Back", callback_data="admin_back")]]),
+        parse_mode="HTML"
     )
 
 async def admin_change_limits(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
     await query.edit_message_text(
-        f"🎯 **Change Limits**\n\n"
-        f"💰 Minimum bet: {admin_config.get('min_bet', MIN_BET)} RUB\n"
-        f"💰 Minimum deposit: {admin_config.get('min_deposit', MIN_DEPOSIT)} RUB\n"
-        f"💰 Minimum withdraw: {admin_config.get('min_withdraw', MIN_WITHDRAW)} RUB\n\n"
-        f"Select limit to change:",
+        f"""<b>🎯 Change Limits</b>
+
+💰 Minimum bet: {admin_config.get('min_bet', MIN_BET)} RUB
+💰 Minimum deposit: {admin_config.get('min_deposit', MIN_DEPOSIT)} RUB
+💰 Minimum withdraw: {admin_config.get('min_withdraw', MIN_WITHDRAW)} RUB
+
+Select limit to change:""",
         reply_markup=InlineKeyboardMarkup([
             [InlineKeyboardButton("✏️ Min Bet", callback_data="admin_edit_min_bet")],
             [InlineKeyboardButton("✏️ Min Deposit", callback_data="admin_edit_min_deposit")],
             [InlineKeyboardButton("✏️ Min Withdraw", callback_data="admin_edit_min_withdraw")],
             [InlineKeyboardButton("🔙 Back", callback_data="admin_back")]
-        ])
+        ]),
+        parse_mode="HTML"
     )
 
 async def admin_edit_min_bet(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
     await query.edit_message_text(
-        f"✏️ **Change Minimum Bet**\n\n"
-        f"📌 Current minimum bet: {admin_config.get('min_bet', MIN_BET)} RUB\n\n"
-        f"Enter new amount:",
-        reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Back", callback_data="admin_back")]])
+        f"""<b>✏️ Change Minimum Bet</b>
+
+📌 Current minimum bet: {admin_config.get('min_bet', MIN_BET)} RUB
+
+Enter new amount:""",
+        reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Back", callback_data="admin_back")]]),
+        parse_mode="HTML"
     )
 
 async def admin_edit_min_deposit(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
     await query.edit_message_text(
-        f"✏️ **Change Minimum Deposit**\n\n"
-        f"📌 Current minimum deposit: {admin_config.get('min_deposit', MIN_DEPOSIT)} RUB\n\n"
-        f"Enter new amount:",
-        reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Back", callback_data="admin_back")]])
+        f"""<b>✏️ Change Minimum Deposit</b>
+
+📌 Current minimum deposit: {admin_config.get('min_deposit', MIN_DEPOSIT)} RUB
+
+Enter new amount:""",
+        reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Back", callback_data="admin_back")]]),
+        parse_mode="HTML"
     )
 
 async def admin_edit_min_withdraw(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
     await query.edit_message_text(
-        f"✏️ **Change Minimum Withdraw**\n\n"
-        f"📌 Current minimum withdraw: {admin_config.get('min_withdraw', MIN_WITHDRAW)} RUB\n\n"
-        f"Enter new amount:",
-        reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Back", callback_data="admin_back")]])
+        f"""<b>✏️ Change Minimum Withdraw</b>
+
+📌 Current minimum withdraw: {admin_config.get('min_withdraw', MIN_WITHDRAW)} RUB
+
+Enter new amount:""",
+        reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Back", callback_data="admin_back")]]),
+        parse_mode="HTML"
     )
 
 async def admin_manage_games(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
     games = admin_config.get("games", {})
-    text = "🎲 **Manage Games**\n\nCurrent status:\n"
+    text = "<b>🎲 Manage Games</b>\n\nCurrent status:\n"
     for game, status in games.items():
         text += f"✅ {game}: {'Enabled' if status else 'Disabled'}\n"
     
@@ -1350,7 +1418,7 @@ async def admin_manage_games(update: Update, context: ContextTypes.DEFAULT_TYPE)
         keyboard.append([InlineKeyboardButton(f"🔄 Toggle {game}", callback_data=f"admin_toggle_game_{game}")])
     keyboard.append([InlineKeyboardButton("🔙 Back", callback_data="admin_back")])
     
-    await query.edit_message_text(text, reply_markup=InlineKeyboardMarkup(keyboard))
+    await query.edit_message_text(text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode="HTML")
 
 async def admin_toggle_game(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
@@ -1362,54 +1430,55 @@ async def admin_toggle_game(update: Update, context: ContextTypes.DEFAULT_TYPE):
     save_json(ADMIN_CONFIG_FILE, admin_config)
     
     await query.edit_message_text(
-        f"✅ Game {game} toggled successfully.\n"
-        f"📌 New status: {'Enabled' if games[game] else 'Disabled'}",
-        reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Manage Games", callback_data="admin_manage_games")]])
+        f"""✅ Game {game} toggled successfully.
+📌 New status: {'Enabled' if games[game] else 'Disabled'}""",
+        reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Manage Games", callback_data="admin_manage_games")]]),
+        parse_mode="HTML"
     )
 
 async def admin_ban(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
     await query.edit_message_text(
-        "🚫 **Ban User**\n\n"
-        f"Enter user ID:",
-        reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Back", callback_data="admin_back")]])
+        "<b>🚫 Ban User</b>\n\nEnter user ID:",
+        reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Back", callback_data="admin_back")]]),
+        parse_mode="HTML"
     )
 
 async def admin_broadcast(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
     await query.edit_message_text(
-        "📨 **Broadcast**\n\n"
-        f"Enter your message:",
-        reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Back", callback_data="admin_back")]])
+        "<b>📨 Broadcast</b>\n\nEnter your message:",
+        reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Back", callback_data="admin_back")]]),
+        parse_mode="HTML"
     )
 
 async def admin_global_gift(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
     await query.edit_message_text(
-        "🎁 **Global Gift**\n\n"
-        f"Enter amount:",
-        reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Back", callback_data="admin_back")]])
+        "<b>🎁 Global Gift</b>\n\nEnter amount:",
+        reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Back", callback_data="admin_back")]]),
+        parse_mode="HTML"
     )
 
 async def admin_balance(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
     await query.edit_message_text(
-        "💸 **Balance Management**\n\n"
-        f"Enter user ID:",
-        reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Back", callback_data="admin_back")]])
+        "<b>💸 Balance Management</b>\n\nEnter user ID:",
+        reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Back", callback_data="admin_back")]]),
+        parse_mode="HTML"
     )
 
 async def admin_search(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
     await query.edit_message_text(
-        "🔍 **Search User**\n\n"
-        f"Enter user ID:",
-        reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Back", callback_data="admin_back")]])
+        "<b>🔍 Search User</b>\n\nEnter user ID:",
+        reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Back", callback_data="admin_back")]]),
+        parse_mode="HTML"
     )
 
 # ======================== ADMIN COMMANDS ========================
@@ -1447,14 +1516,16 @@ async def handle_admin_message(update: Update, context: ContextTypes.DEFAULT_TYP
             if data.get("banned", False):
                 continue
             try:
-                await context.bot.send_message(int(uid), f"📨 **Broadcast**\n\n{text}")
+                await context.bot.send_message(int(uid), f"{text}", parse_mode="HTML")
                 success += 1
             except:
                 fail += 1
         await update.message.reply_text(
-            f"✅ **Broadcast sent!**\n\n"
-            f"👥 Success: {success}\n"
-            f"❌ Failed: {fail}"
+            f"""<b>✅ Broadcast sent!</b>
+
+👥 Success: {success}
+❌ Failed: {fail}""",
+            parse_mode="HTML"
         )
     
     elif action == "gift":
@@ -1475,19 +1546,23 @@ async def handle_admin_message(update: Update, context: ContextTypes.DEFAULT_TYP
                 try:
                     await context.bot.send_message(
                         uid,
-                        f"🎁 **Special Gift from one win!**\n\n"
-                        f"💰 {amount} RUB added to your balance.\n\n"
-                        f"💳 New balance: {format_russian_number(user['balance'])} RUB",
-                        parse_mode="Markdown"
+                        f"""<b>🎁 Special Gift from 1 WIN!</b>
+
+💰 {amount} RUB added to your balance.
+
+💳 New balance: {format_russian_number(user['balance'])} RUB""",
+                        parse_mode="HTML"
                     )
                     success += 1
                 except:
                     fail += 1
             await update.message.reply_text(
-                f"✅ **Global gift sent!**\n\n"
-                f"💰 Amount: {amount} RUB\n"
-                f"👥 Success: {success}\n"
-                f"❌ Failed: {fail}"
+                f"""<b>✅ Global gift sent!</b>
+
+💰 Amount: {amount} RUB
+👥 Success: {success}
+❌ Failed: {fail}""",
+                parse_mode="HTML"
             )
         except:
             await update.message.reply_text("❌ Enter a valid number.")
@@ -1496,19 +1571,18 @@ async def handle_admin_message(update: Update, context: ContextTypes.DEFAULT_TYP
         try:
             target = int(text)
             user = get_user(target)
-            await update.message.reply_text(
-                f"👤 **User Info**\n\n"
-                f"🆔 ID: {target}\n"
-                f"👤 Username: @{user['username'] or 'User'}\n"
-                f"💰 Balance: {format_russian_number(user['balance'])} RUB\n"
-                f"📊 Status: {'🚫 Banned' if user.get('banned', False) else '✅ Active'}\n"
-                f"💳 Deposited: {'✅ Yes' if user.get('has_deposited', False) else '❌ No'}",
-                reply_markup=InlineKeyboardMarkup([
-                    [InlineKeyboardButton("➕ Add Balance", callback_data=f"admin_add_{target}")],
-                    [InlineKeyboardButton("➖ Remove Balance", callback_data=f"admin_remove_{target}")],
-                    [InlineKeyboardButton("🔙 Back", callback_data="admin_back")]
-                ])
-            )
+            text = f"""<b>👤 User Info</b>
+
+🆔 ID: {target}
+👤 Username: @{user['username'] or 'User'}
+💰 Balance: {format_russian_number(user['balance'])} RUB
+📊 Status: {'🚫 Banned' if user.get('banned', False) else '✅ Active'}
+💳 Deposited: {'✅ Yes' if user.get('has_deposited', False) else '❌ No'}"""
+            await update.message.reply_text(text, reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton("➕ Add Balance", callback_data=f"admin_add_{target}")],
+                [InlineKeyboardButton("➖ Remove Balance", callback_data=f"admin_remove_{target}")],
+                [InlineKeyboardButton("🔙 Back", callback_data="admin_back")]
+            ]), parse_mode="HTML")
         except:
             await update.message.reply_text("❌ Invalid ID.")
     
@@ -1516,15 +1590,15 @@ async def handle_admin_message(update: Update, context: ContextTypes.DEFAULT_TYP
         try:
             target = int(text)
             user = get_user(target)
-            await update.message.reply_text(
-                f"👤 **User Info**\n\n"
-                f"🆔 ID: {target}\n"
-                f"👤 Username: @{user['username'] or 'User'}\n"
-                f"💰 Balance: {format_russian_number(user['balance'])} RUB\n"
-                f"📊 Status: {'🚫 Banned' if user.get('banned', False) else '✅ Active'}\n"
-                f"💳 Deposited: {'✅ Yes' if user.get('has_deposited', False) else '❌ No'}\n"
-                f"📅 Joined: {user.get('created_at', 'Unknown')}"
-            )
+            text = f"""<b>👤 User Info</b>
+
+🆔 ID: {target}
+👤 Username: @{user['username'] or 'User'}
+💰 Balance: {format_russian_number(user['balance'])} RUB
+📊 Status: {'🚫 Banned' if user.get('banned', False) else '✅ Active'}
+💳 Deposited: {'✅ Yes' if user.get('has_deposited', False) else '❌ No'}
+📅 Joined: {user.get('created_at', 'Unknown')}"""
+            await update.message.reply_text(text)
         except:
             await update.message.reply_text("❌ Invalid ID.")
     
@@ -1567,12 +1641,12 @@ async def handle_admin_message(update: Update, context: ContextTypes.DEFAULT_TYP
     elif action == "edit_trx":
         admin_config["trx_wallet"] = text
         save_json(ADMIN_CONFIG_FILE, admin_config)
-        await update.message.reply_text(f"✅ TRX wallet updated.\n🟣 New address: `{text}`")
+        await update.message.reply_text(f"✅ TRX wallet updated.\n🟣 New address: <code>{text}</code>", parse_mode="HTML")
     
     elif action == "edit_usdt":
         admin_config["usdt_wallet"] = text
         save_json(ADMIN_CONFIG_FILE, admin_config)
-        await update.message.reply_text(f"✅ USDT wallet updated.\n🟢 New address: `{text}`")
+        await update.message.reply_text(f"✅ USDT wallet updated.\n🟢 New address: <code>{text}</code>", parse_mode="HTML")
     
     elif action == "set_date":
         admin_config["deposit_enable_date"] = text
@@ -1589,11 +1663,14 @@ async def admin_add_balance(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data["admin_action"] = "admin_add"
     
     await query.edit_message_text(
-        f"➕ **Add Balance**\n\n"
-        f"👤 User: @{get_user(target)['username'] or target}\n"
-        f"💰 Current balance: {format_russian_number(get_user(target)['balance'])} RUB\n\n"
-        f"Enter amount:",
-        reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Cancel", callback_data="admin_back")]])
+        f"""<b>➕ Add Balance</b>
+
+👤 User: @{get_user(target)['username'] or target}
+💰 Current balance: {format_russian_number(get_user(target)['balance'])} RUB
+
+Enter amount:""",
+        reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Cancel", callback_data="admin_back")]]),
+        parse_mode="HTML"
     )
 
 async def admin_remove_balance(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -1604,11 +1681,14 @@ async def admin_remove_balance(update: Update, context: ContextTypes.DEFAULT_TYP
     context.user_data["admin_action"] = "admin_remove"
     
     await query.edit_message_text(
-        f"➖ **Remove Balance**\n\n"
-        f"👤 User: @{get_user(target)['username'] or target}\n"
-        f"💰 Current balance: {format_russian_number(get_user(target)['balance'])} RUB\n\n"
-        f"Enter amount:",
-        reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Cancel", callback_data="admin_back")]])
+        f"""<b>➖ Remove Balance</b>
+
+👤 User: @{get_user(target)['username'] or target}
+💰 Current balance: {format_russian_number(get_user(target)['balance'])} RUB
+
+Enter amount:""",
+        reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Cancel", callback_data="admin_back")]]),
+        parse_mode="HTML"
     )
 
 async def handle_admin_balance_action(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -1634,17 +1714,21 @@ async def handle_admin_balance_action(update: Update, context: ContextTypes.DEFA
         user["has_deposited"] = True
         save_user(target, user)
         await update.message.reply_text(
-            f"✅ Balance added.\n"
-            f"👤 User: @{user['username'] or target}\n"
-            f"💰 Amount: {amount} RUB\n"
-            f"💰 New balance: {format_russian_number(user['balance'])} RUB"
+            f"""<b>✅ Balance added.</b>
+
+👤 User: @{user['username'] or target}
+💰 Amount: {amount} RUB
+💰 New balance: {format_russian_number(user['balance'])} RUB""",
+            parse_mode="HTML"
         )
         try:
             await context.bot.send_message(
                 target,
-                f"✅ **Balance increased!**\n\n"
-                f"💰 Amount: {amount} RUB\n"
-                f"💰 New balance: {format_russian_number(user['balance'])} RUB"
+                f"""<b>✅ Balance increased!</b>
+
+💰 Amount: {amount} RUB
+💰 New balance: {format_russian_number(user['balance'])} RUB""",
+                parse_mode="HTML"
             )
         except:
             pass
@@ -1659,17 +1743,21 @@ async def handle_admin_balance_action(update: Update, context: ContextTypes.DEFA
         add_transaction(target, -amount, "admin_remove", f"Removed by admin {amount} RUB")
         save_user(target, user)
         await update.message.reply_text(
-            f"✅ Balance removed.\n"
-            f"👤 User: @{user['username'] or target}\n"
-            f"💰 Amount: {amount} RUB\n"
-            f"💰 New balance: {format_russian_number(user['balance'])} RUB"
+            f"""<b>✅ Balance removed.</b>
+
+👤 User: @{user['username'] or target}
+💰 Amount: {amount} RUB
+💰 New balance: {format_russian_number(user['balance'])} RUB""",
+            parse_mode="HTML"
         )
         try:
             await context.bot.send_message(
                 target,
-                f"⚠️ **Balance decreased!**\n\n"
-                f"💰 Amount: {amount} RUB\n"
-                f"💰 New balance: {format_russian_number(user['balance'])} RUB"
+                f"""<b>⚠️ Balance decreased!</b>
+
+💰 Amount: {amount} RUB
+💰 New balance: {format_russian_number(user['balance'])} RUB""",
+                parse_mode="HTML"
             )
         except:
             pass
@@ -1690,10 +1778,12 @@ async def jayeze(update: Update, context: ContextTypes.DEFAULT_TYPE):
     args = context.args
     if not args:
         await update.message.reply_text(
-            "❌ **Usage:**\n"
-            "/jayeze amount\n\n"
-            "Example: /jayeze 100\n"
-            "Sends 100 RUB to all users."
+            """<b>❌ Usage:</b>
+/jayeze amount
+
+Example: /jayeze 100
+Sends 100 RUB to all users.""",
+            parse_mode="HTML"
         )
         return
     
@@ -1713,7 +1803,7 @@ async def jayeze(update: Update, context: ContextTypes.DEFAULT_TYPE):
     fail = 0
     total_cost = 0
     
-    msg = await update.message.reply_text(f"📨 **Sending {amount} RUB to all users...**")
+    msg = await update.message.reply_text(f"📨 Sending {amount} RUB to all users...")
     
     for uid, data in users.items():
         if data.get("banned", False):
@@ -1729,11 +1819,13 @@ async def jayeze(update: Update, context: ContextTypes.DEFAULT_TYPE):
             try:
                 await context.bot.send_message(
                     int(uid),
-                    f"🎁 **Special Gift from one win!**\n\n"
-                    f"💰 {amount} RUB added to your balance.\n"
-                    f"💳 New balance: {format_russian_number(user['balance'])} RUB\n\n"
-                    f"🎉 Enjoy our games!",
-                    parse_mode="Markdown"
+                    f"""<b>🎁 Special Gift from 1 WIN!</b>
+
+💰 {amount} RUB added to your balance.
+💳 New balance: {format_russian_number(user['balance'])} RUB
+
+🎉 Enjoy our games!""",
+                    parse_mode="HTML"
                 )
             except:
                 pass
@@ -1741,11 +1833,13 @@ async def jayeze(update: Update, context: ContextTypes.DEFAULT_TYPE):
             fail += 1
     
     await msg.edit_text(
-        f"✅ **Global gift sent successfully!**\n\n"
-        f"💰 Amount per user: {amount} RUB\n"
-        f"👥 Success: {success}\n"
-        f"💰 Total cost: {format_russian_number(total_cost)} RUB\n"
-        f"❌ Failed: {fail}"
+        f"""<b>✅ Global gift sent successfully!</b>
+
+💰 Amount per user: {amount} RUB
+👥 Success: {success}
+💰 Total cost: {format_russian_number(total_cost)} RUB
+❌ Failed: {fail}""",
+        parse_mode="HTML"
     )
 
 async def ersal(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -1760,16 +1854,18 @@ async def ersal(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     if not text:
         await update.message.reply_text(
-            "❌ **Usage:**\n"
-            "/ersal your message\n\n"
-            "Example: /ersal Hello everyone!"
+            """<b>❌ Usage:</b>
+/ersal your message
+
+Example: /ersal Hello everyone!""",
+            parse_mode="HTML"
         )
         return
     
     success = 0
     fail = 0
     
-    msg = await update.message.reply_text("📨 **Sending broadcast...**")
+    msg = await update.message.reply_text("📨 Sending broadcast...")
     
     for uid, data in users.items():
         if data.get("banned", False):
@@ -1778,16 +1874,18 @@ async def ersal(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await context.bot.send_message(
                 int(uid),
                 f"{text}",
-                parse_mode="Markdown"
+                parse_mode="HTML"
             )
             success += 1
         except:
             fail += 1
     
     await msg.edit_text(
-        f"✅ **Broadcast sent!**\n\n"
-        f"👥 Success: {success}\n"
-        f"❌ Failed: {fail}"
+        f"""<b>✅ Broadcast sent!</b>
+
+👥 Success: {success}
+❌ Failed: {fail}""",
+        parse_mode="HTML"
     )
 
 async def amar(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -1815,7 +1913,7 @@ async def amar(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     sorted_by_balance = sorted(user_list, key=lambda x: x["balance"], reverse=True)[:20]
     
-    text = "🏆 **Top 20 Users by Balance:**\n\n"
+    text = "<b>🏆 Top 20 Users by Balance:</b>\n\n"
     for i, user in enumerate(sorted_by_balance, 1):
         username = user["username"] if user["username"] else f"User {user['id'][:8]}"
         text += f"{i}. @{username} — 💰 {format_russian_number(user['balance'])} RUB\n"
@@ -1823,7 +1921,7 @@ async def amar(update: Update, context: ContextTypes.DEFAULT_TYPE):
     sorted_by_referral = sorted(user_list, key=lambda x: x["referral_count"], reverse=True)[:20]
     
     text += "\n━━━━━━━━━━━━━━━━━━━━━━\n"
-    text += "👥 **Top 20 Users by Referrals:**\n\n"
+    text += "<b>👥 Top 20 Users by Referrals:</b>\n\n"
     for i, user in enumerate(sorted_by_referral, 1):
         username = user["username"] if user["username"] else f"User {user['id'][:8]}"
         text += f"{i}. @{username} — 👥 {user['referral_count']}\n"
@@ -1834,13 +1932,13 @@ async def amar(update: Update, context: ContextTypes.DEFAULT_TYPE):
     total_wins = sum(u["total_wins"] for u in user_list)
     
     text += "\n━━━━━━━━━━━━━━━━━━━━━━\n"
-    text += f"📊 **Bot Statistics:**\n"
-    text += f"👥 Total users: {total_users:,}\n"
-    text += f"💰 Total balance: {format_russian_number(total_balance)} RUB\n"
-    text += f"🎯 Total bets: {total_bets:,}\n"
-    text += f"🏆 Total wins: {total_wins:,}"
+    text += f"""<b>📊 Bot Statistics:</b>
+👥 Total users: {total_users:,}
+💰 Total balance: {format_russian_number(total_balance)} RUB
+🎯 Total bets: {total_bets:,}
+🏆 Total wins: {total_wins:,}"""
     
-    await update.message.reply_text(text, parse_mode="Markdown")
+    await update.message.reply_text(text, parse_mode="HTML")
 
 # ======================== UNKNOWN ========================
 async def unknown(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -1936,7 +2034,7 @@ def main():
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_withdraw_info))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, unknown))
     
-    print("🤖 one win bot started...")
+    print("🤖 1 WIN bot started...")
     app.run_polling()
 
 if __name__ == "__main__":
