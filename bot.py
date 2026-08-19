@@ -31,6 +31,8 @@ SUPPORT = "@onewinassist"
 TRX_WALLET = os.environ.get("TRX_WALLET", "TEv9t55am7zcCi2Z7dUXtFfKQmofeN7e1r")
 USDT_WALLET = os.environ.get("USDT_WALLET", "TEVuvWZ68UbDUdzpd6EqxncsqDVjwyY7cj")
 
+BOT_USERNAME = "onewin_rubot"  # ✅ نام کاربری ربات
+
 MIN_BET = 10
 GIFT_AMOUNT = 100
 MIN_WITHDRAW = 250
@@ -1201,8 +1203,7 @@ async def gift(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = get_user(user_id)
     update_last_activity(user_id)
     
-    bot_username = "onewinbot"
-    link = f"https://t.me/{bot_username}?start=ref_{user['referral_code']}"
+    link = f"https://t.me/{BOT_USERNAME}?start=ref_{user['referral_code']}"
     commission_percent = user.get("commission_percent", COMMISSION_PERCENT)
     
     text = f"""<b>🎁 Бонус и комиссия</b>
