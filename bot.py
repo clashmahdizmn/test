@@ -10,9 +10,12 @@ import random
 import logging
 import string
 import gc
+import asyncio
 from datetime import datetime
 from threading import Thread
 from flask import Flask, jsonify
+from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.triggers.cron import CronTrigger
 
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (
@@ -24,7 +27,7 @@ from telegram.ext import (
 TOKEN = os.environ.get("BOT_TOKEN", "YOUR_BOT_TOKEN_HERE")
 ADMIN_IDS = [int(id.strip()) for id in os.environ.get("ADMIN_IDS", "123456789").split(",") if id.strip()]
 CHANNEL = os.environ.get("CHANNEL", "@onewin")
-SUPPORT = "@onewinsup"
+SUPPORT = "@onewinassist"
 TRX_WALLET = os.environ.get("TRX_WALLET", "TEv9t55am7zcCi2Z7dUXtFfKQmofeN7e1r")
 USDT_WALLET = os.environ.get("USDT_WALLET", "TEVuvWZ68UbDUdzpd6EqxncsqDVjwyY7cj")
 
@@ -34,6 +37,8 @@ MIN_WITHDRAW = 250
 MIN_DEPOSIT = 1000
 COMMISSION_PERCENT = 30
 INITIAL_BALANCE = 0
+INACTIVE_BONUS = 50
+INACTIVE_HOURS = 24
 
 BOT_NAME = "1 WIN"
 
@@ -118,7 +123,9 @@ def get_user(user_id):
             "total_losses": 0,
             "has_deposited": False,
             "transactions": [],
-            "created_at": str(datetime.now())
+            "created_at": str(datetime.now()),
+            "last_activity": str(datetime.now()),
+            "inactive_warning_sent": False
         }
         save_json(DATA_FILE, users)
     return users[uid]
@@ -144,12 +151,20 @@ def add_transaction(user_id, amount, trans_type, description=""):
         user["transactions"] = user["transactions"][-100:]
     save_user(user_id, user)
 
+def update_last_activity(user_id):
+    """Update user's last activity timestamp"""
+    user = get_user(user_id)
+    user["last_activity"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    user["inactive_warning_sent"] = False
+    save_user(user_id, user)
+
 # ======================== MAIN MENU ========================
 async def main_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
     user_id = query.from_user.id
     user = get_user(user_id)
+    update_last_activity(user_id)
     
     keyboard = [
         [InlineKeyboardButton("🎲 Играть", callback_data="game_menu")],
@@ -178,6 +193,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     username = update.effective_user.username
     user = get_user(user_id)
     user["username"] = username
+    update_last_activity(user_id)
     save_user(user_id, user)
     
     if context.args and context.args[0].startswith("ref_"):
@@ -245,6 +261,7 @@ async def check_gift(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.answer()
     user_id = query.from_user.id
     user = get_user(user_id)
+    update_last_activity(user_id)
     
     channels = admin_config.get("channels", [{"link": CHANNEL, "enabled": True}])
     enabled_channels = [c for c in channels if c.get("enabled", True)]
@@ -320,6 +337,8 @@ async def check_gift(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def game_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
+    user_id = query.from_user.id
+    update_last_activity(user_id)
     
     games = admin_config.get("games", {})
     keyboard = []
@@ -343,6 +362,7 @@ async def dice_game(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.answer()
     user_id = query.from_user.id
     user = get_user(user_id)
+    update_last_activity(user_id)
     
     keyboard = [
         [InlineKeyboardButton("10 RUB", callback_data="dice_bet_10"),
@@ -366,6 +386,7 @@ async def dice_bet_selected(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.answer()
     user_id = query.from_user.id
     user = get_user(user_id)
+    update_last_activity(user_id)
     
     amount = int(query.data.split("_")[2])
     
@@ -408,6 +429,7 @@ async def dice_coef_selected(update: Update, context: ContextTypes.DEFAULT_TYPE)
     await query.answer()
     user_id = query.from_user.id
     user = get_user(user_id)
+    update_last_activity(user_id)
     
     bet_amount = context.user_data.get("dice_amount", 0)
     if bet_amount == 0:
@@ -436,6 +458,7 @@ async def dice_roll(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.answer()
     user_id = query.from_user.id
     user = get_user(user_id)
+    update_last_activity(user_id)
     
     bet_amount = context.user_data.get("dice_amount", 0)
     choice = context.user_data.get("dice_choice", "")
@@ -539,6 +562,7 @@ async def coin_game(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.answer()
     user_id = query.from_user.id
     user = get_user(user_id)
+    update_last_activity(user_id)
     
     keyboard = [
         [InlineKeyboardButton("10 RUB", callback_data="coin_bet_10"),
@@ -564,6 +588,7 @@ async def coin_bet_selected(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.answer()
     user_id = query.from_user.id
     user = get_user(user_id)
+    update_last_activity(user_id)
     
     amount = int(query.data.split("_")[2])
     
@@ -602,6 +627,7 @@ async def coin_predict(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.answer()
     user_id = query.from_user.id
     user = get_user(user_id)
+    update_last_activity(user_id)
     
     bet_amount = context.user_data.get("coin_amount", 0)
     if bet_amount == 0:
@@ -664,6 +690,7 @@ async def slot_game(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.answer()
     user_id = query.from_user.id
     user = get_user(user_id)
+    update_last_activity(user_id)
     
     keyboard = [
         [InlineKeyboardButton("10 RUB", callback_data="slot_bet_10"),
@@ -694,6 +721,7 @@ async def slot_bet_selected(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.answer()
     user_id = query.from_user.id
     user = get_user(user_id)
+    update_last_activity(user_id)
     
     amount = int(query.data.split("_")[2])
     
@@ -726,6 +754,7 @@ async def slot_spin(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.answer()
     user_id = query.from_user.id
     user = get_user(user_id)
+    update_last_activity(user_id)
     bet_amount = context.user_data.get("slot_amount", 0)
     
     if bet_amount == 0:
@@ -800,6 +829,7 @@ async def football_game(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.answer()
     user_id = query.from_user.id
     user = get_user(user_id)
+    update_last_activity(user_id)
     
     keyboard = [
         [InlineKeyboardButton("10 RUB", callback_data="football_bet_10"),
@@ -825,6 +855,7 @@ async def football_bet_selected(update: Update, context: ContextTypes.DEFAULT_TY
     await query.answer()
     user_id = query.from_user.id
     user = get_user(user_id)
+    update_last_activity(user_id)
     
     amount = int(query.data.split("_")[2])
     
@@ -861,6 +892,7 @@ async def football_predict(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.answer()
     user_id = query.from_user.id
     user = get_user(user_id)
+    update_last_activity(user_id)
     bet_amount = context.user_data.get("football_amount", 0)
     prediction = query.data.split("_")[2]
     
@@ -922,6 +954,7 @@ async def my_account(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.answer()
     user_id = query.from_user.id
     user = get_user(user_id)
+    update_last_activity(user_id)
     
     total_bets = user.get("total_bets", 0)
     wins = user.get("total_wins", 0)
@@ -950,6 +983,7 @@ async def deposit(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.answer()
     user_id = query.from_user.id
     user = get_user(user_id)
+    update_last_activity(user_id)
     
     trx_wallet = admin_config.get("trx_wallet", TRX_WALLET)
     usdt_wallet = admin_config.get("usdt_wallet", USDT_WALLET)
@@ -1007,6 +1041,7 @@ async def withdraw(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.answer()
     user_id = query.from_user.id
     user = get_user(user_id)
+    update_last_activity(user_id)
     
     if not user.get("has_deposited", False):
         text = """<b>❌ Вывод средств недоступен!</b>
@@ -1064,6 +1099,7 @@ async def withdraw_amount_selected(update: Update, context: ContextTypes.DEFAULT
     await query.answer()
     user_id = query.from_user.id
     user = get_user(user_id)
+    update_last_activity(user_id)
     
     amount = int(query.data.split("_")[1])
     context.user_data["withdraw_amount"] = amount
@@ -1103,6 +1139,7 @@ async def withdraw_wallet(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def handle_withdraw_info(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     user = get_user(user_id)
+    update_last_activity(user_id)
     info = update.message.text.strip()
     amount = context.user_data.get("withdraw_amount", 0)
     method = context.user_data.get("withdraw_method", "unknown")
@@ -1143,6 +1180,7 @@ async def transactions(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.answer()
     user_id = query.from_user.id
     user = get_user(user_id)
+    update_last_activity(user_id)
     
     trans = user.get("transactions", [])[-10:]
     if not trans:
@@ -1161,6 +1199,7 @@ async def gift(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.answer()
     user_id = query.from_user.id
     user = get_user(user_id)
+    update_last_activity(user_id)
     
     bot_username = "onewinbot"
     link = f"https://t.me/{bot_username}?start=ref_{user['referral_code']}"
@@ -1192,6 +1231,9 @@ async def gift(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def trust(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
+    user_id = query.from_user.id
+    update_last_activity(user_id)
+    
     text = f"""<b>❓ Как доверять?</b>
 
 Мы понимаем, что доверие к онлайн-сервису может быть сложным.
@@ -1201,6 +1243,56 @@ async def trust(update: Update, context: ContextTypes.DEFAULT_TYPE):
 Мы стремимся предоставить приятный и честный игровой опыт для всех пользователей. ❤️"""
     
     await query.edit_message_text(text, reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Главное меню", callback_data="main_menu")]]), parse_mode="HTML")
+
+# ======================== CHECK INACTIVE USERS ========================
+async def check_inactive_users(app: Application):
+    """Check users who haven't played for 24 hours and send them a bonus"""
+    bot = app.bot
+    now = datetime.now()
+    
+    for uid, data in users.items():
+        if data.get("banned", False):
+            continue
+        
+        if data.get("inactive_warning_sent", False):
+            continue
+        
+        last_activity = data.get("last_activity")
+        if not last_activity:
+            last_activity = data.get("created_at", now.strftime("%Y-%m-%d %H:%M:%S"))
+        
+        try:
+            last_time = datetime.strptime(last_activity, "%Y-%m-%d %H:%M:%S")
+            diff = (now - last_time).total_seconds() / 3600
+            
+            if diff >= INACTIVE_HOURS:
+                user = get_user(uid)
+                user["balance"] += INACTIVE_BONUS
+                user["inactive_warning_sent"] = True
+                add_transaction(uid, INACTIVE_BONUS, "gift", f"Бонус за неактивность {INACTIVE_BONUS} RUB")
+                save_user(uid, user)
+                
+                try:
+                    await bot.send_message(
+                        chat_id=int(uid),
+                        text=f"""<b>🎰 1 WIN</b>
+
+👋 Здравствуйте! Мы заметили, что вы давно не играли.
+
+🎲 Для вас доступны новые игры и призы!
+
+💰 В качестве подарка на ваш счёт начислено {INACTIVE_BONUS} RUB для начала игры!
+
+🆘 Поддержка: {SUPPORT}
+
+👉 Для начала нажмите /start""",
+                        parse_mode="HTML"
+                    )
+                    print(f"✅ Message sent to inactive user {uid} with bonus {INACTIVE_BONUS} RUB")
+                except Exception as e:
+                    print(f"❌ Failed to send message to user {uid}: {e}")
+        except Exception as e:
+            print(f"❌ Error processing user {uid}: {e}")
 
 # ======================== ADMIN PANEL ========================
 async def admin_panel(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -1957,40 +2049,41 @@ def main():
     
     app = Application.builder().token(TOKEN).build()
     
-    # ======================== COMMANDS ========================
+    # ======================== REGISTER HANDLERS ========================
+    # Commands
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("admin", admin_panel))
     app.add_handler(CommandHandler("jayeze", jayeze))
     app.add_handler(CommandHandler("ersal", ersal))
     app.add_handler(CommandHandler("amar", amar))
     
-    # ======================== MAIN CALLBACKS ========================
+    # Main callbacks
     app.add_handler(CallbackQueryHandler(main_menu, pattern="^main_menu$"))
     app.add_handler(CallbackQueryHandler(game_menu, pattern="^game_menu$"))
     app.add_handler(CallbackQueryHandler(check_gift, pattern="^check_gift$"))
     
-    # ======================== DICE GAME ========================
+    # Dice game
     app.add_handler(CallbackQueryHandler(dice_game, pattern="^dice_game$"))
     app.add_handler(CallbackQueryHandler(dice_bet_selected, pattern="^dice_bet_"))
     app.add_handler(CallbackQueryHandler(dice_coef_selected, pattern="^dice_coef_"))
     app.add_handler(CallbackQueryHandler(dice_roll, pattern="^dice_roll$"))
     
-    # ======================== COIN GAME ========================
+    # Coin game
     app.add_handler(CallbackQueryHandler(coin_game, pattern="^coin_game$"))
     app.add_handler(CallbackQueryHandler(coin_bet_selected, pattern="^coin_bet_"))
     app.add_handler(CallbackQueryHandler(coin_predict, pattern="^coin_predict_"))
     
-    # ======================== SLOT GAME ========================
+    # Slot game
     app.add_handler(CallbackQueryHandler(slot_game, pattern="^slot_game$"))
     app.add_handler(CallbackQueryHandler(slot_bet_selected, pattern="^slot_bet_"))
     app.add_handler(CallbackQueryHandler(slot_spin, pattern="^slot_spin$"))
     
-    # ======================== FOOTBALL GAME ========================
+    # Football game
     app.add_handler(CallbackQueryHandler(football_game, pattern="^football_game$"))
     app.add_handler(CallbackQueryHandler(football_bet_selected, pattern="^football_bet_"))
     app.add_handler(CallbackQueryHandler(football_predict, pattern="^football_predict_"))
     
-    # ======================== ACCOUNT ========================
+    # Account
     app.add_handler(CallbackQueryHandler(my_account, pattern="^my_account$"))
     app.add_handler(CallbackQueryHandler(deposit, pattern="^deposit$"))
     app.add_handler(CallbackQueryHandler(withdraw, pattern="^withdraw$"))
@@ -1999,11 +2092,11 @@ def main():
     app.add_handler(CallbackQueryHandler(withdraw_wallet, pattern="^withdraw_wallet$"))
     app.add_handler(CallbackQueryHandler(transactions, pattern="^transactions$"))
     
-    # ======================== OTHER ========================
+    # Other
     app.add_handler(CallbackQueryHandler(gift, pattern="^gift$"))
     app.add_handler(CallbackQueryHandler(trust, pattern="^trust$"))
     
-    # ======================== ADMIN ========================
+    # Admin
     app.add_handler(CallbackQueryHandler(admin_stats, pattern="^admin_stats$"))
     app.add_handler(CallbackQueryHandler(admin_users, pattern="^admin_users$"))
     app.add_handler(CallbackQueryHandler(admin_settings, pattern="^admin_settings$"))
@@ -2028,11 +2121,29 @@ def main():
     app.add_handler(CallbackQueryHandler(admin_add_balance, pattern="^admin_add_"))
     app.add_handler(CallbackQueryHandler(admin_remove_balance, pattern="^admin_remove_"))
     
-    # ======================== MESSAGE HANDLERS ========================
+    # Message handlers
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_admin_message))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_admin_balance_action))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_withdraw_info))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, unknown))
+    
+    # ======================== SCHEDULER FOR INACTIVE USERS ========================
+    scheduler = BackgroundScheduler()
+    
+    async def scheduled_check():
+        await check_inactive_users(app)
+    
+    def run_async_job():
+        asyncio.run(scheduled_check())
+    
+    scheduler.add_job(
+        run_async_job,
+        CronTrigger(hour=10, minute=0),  # Every day at 10:00 AM
+        id="check_inactive_users",
+        replace_existing=True
+    )
+    scheduler.start()
+    print("✅ Scheduler for inactive users started")
     
     print("🤖 1 WIN bot started...")
     app.run_polling()
